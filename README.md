@@ -11,6 +11,11 @@ git clone https://github.com/maxx1980/bras-autotune
 
 cd bras-autotune
 
+в корне лежит пакет пакет bras-autotune_1.0-1_all.deb 
+
+dpkg -i bras-autotune_1.0-1_all.deb 
+
+либо 
 python3 -m venv .venv
 
 source .venv/bin/activate
@@ -18,10 +23,6 @@ source .venv/bin/activate
 pip install -U pip
 
 pip install -e .
-
-Либо скачиваем пакет bras-autotune_1.0-1_all.deb 
-
-dpkg -i bras-autotune_1.0-1_all.deb 
 
 Запуск CLI: bras-autotune
 

@@ -1,8 +1,7 @@
+from pathlib import Path
+from bras_autotune.nic import detect_irqs_for_if
 
-    from pathlib import Path
-    from bras_autotune.nic import detect_irqs_for_if
-
-    def generate_interfaces_snippet(cfg):
+def generate_interfaces_snippet(cfg):
         out = Path(cfg["out_dir"]) / "interfaces.bras"
         if_wan = cfg["if_wan"]
         if_bras = cfg["if_bras"]
@@ -14,8 +13,7 @@
         rxq_bras = cfg["rxq_bras"]
 
         lines = []
-        lines.append("# Auto-generated BRAS tuning
-")
+        lines.append("# Auto-generated BRAS tuning")
 
         lines.append(f"auto {if_wan}")
         lines.append(f"iface {if_wan} inet manual")
@@ -55,34 +53,27 @@
         lines.append("")
 
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text("
-".join(lines) + "
-")
+        out.write_text("".join(lines) + "")
         print(f"interfaces.bras → {out}")
 
-    def generate_cmdline_snippet(cfg):
+def generate_cmdline_snippet(cfg):
         out = Path(cfg["out_dir"]) / "cmdline.txt"
         d = cfg["data_cores"]
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(f"isolcpus=0-{d-1} nohz_full=0-{d-1} rcu_nocbs=0-{d-1}
-")
+        out.write_text(f"isolcpus=0-{d-1} nohz_full=0-{d-1} rcu_nocbs=0-{d-1}")
         print(f"cmdline.txt → {out}")
 
-    def generate_systemd_pinning(cfg):
+def generate_systemd_pinning(cfg):
         out = Path(cfg["out_dir"]) / "systemd-pinning.sh"
         ctrl = " ".join(map(str, cfg["ctrl_cpu_list"]))
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(
-            "#!/bin/bash
-"
-            "SERVICES=(bird bird6 accel-ppp ssh sshd snmpd systemd-journald rsyslog cron)
-"
-            "for SVC in "${SERVICES[@]}"; do
-"
-            f"    systemctl set-property "$SVC".service AllowedCPUs={ctrl} || true
-"
-            "done
-"
+        "#!/bin/bash\n"
+        "SERVICES=(bird bird6 accel-ppp ssh sshd snmpd systemd-journald rsyslog cron)\n"
+        "for SVC in \"${SERVICES[@]}\"; do\n"
+        f"    systemctl set-property \"$SVC\".service AllowedCPUs={ctrl} || true\n"
+        "done\n"
+
         )
         out.chmod(0o755)
         print(f"systemd-pinning.sh → {out}")

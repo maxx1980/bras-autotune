@@ -1,0 +1,2 @@
+#фрагмент конфига grub для изоляции data-plane ядер
+isolcpus=0-7 nohz_full=0-7 rcu_nocbs=0-7

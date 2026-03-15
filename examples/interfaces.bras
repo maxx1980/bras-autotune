@@ -1,1 +1,66 @@
+# Auto-generated BRAS tuning
+
+auto enp1s0f0
+iface enp1s0f0 inet manual
+    post-up ethtool -L enp1s0f0 combined 8
+
+    # XPS
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-0/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-1/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-2/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-3/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-4/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-5/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-6/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f0/queues/tx-7/xps_cpus
+
+auto enp1s0f1
+iface enp1s0f1 inet manual
+    post-up ethtool -L enp1s0f1 combined 8
+
+    # XPS
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-0/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-1/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-2/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-3/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-4/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-5/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-6/xps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/tx-7/xps_cpus
+
+    # RPS
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-0/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-1/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-2/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-3/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-4/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-5/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-6/rps_cpus
+    post-up echo ff > /sys/class/net/enp1s0f1/queues/rx-7/rps_cpus
+
+    # RFS
+    post-up echo 65536 > /proc/sys/net/core/rps_sock_flow_entries
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-0/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-1/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-2/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-3/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-4/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-5/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-6/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp1s0f1/queues/rx-7/rps_flow_cnt
+
+    # RSS (IRQ affinity) for enp1s0f1
+    post-up echo 1 > /proc/irq/148/smp_affinity
+    post-up echo 2 > /proc/irq/149/smp_affinity
+    post-up echo 4 > /proc/irq/150/smp_affinity
+    post-up echo 8 > /proc/irq/151/smp_affinity
+    post-up echo 10 > /proc/irq/152/smp_affinity
+    post-up echo 20 > /proc/irq/153/smp_affinity
+    post-up echo 40 > /proc/irq/154/smp_affinity
+    post-up echo 80 > /proc/irq/155/smp_affinity
+    post-up echo 1 > /proc/irq/156/smp_affinity
+    post-up echo 2 > /proc/irq/157/smp_affinity
+    post-up echo 4 > /proc/irq/158/smp_affinity
+    post-up echo 8 > /proc/irq/159/smp_affinity
+    post-up echo 10 > /proc/irq/160/smp_affinity
 

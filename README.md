@@ -1,7 +1,7 @@
 
 # BRAS Autotune
 Автоматический генератор тюнинга BRAS/PPPoE с определением P/E ядер, синхронизацией очередей NIC и генерацией конфигураций.
-bras-autotune
+RSS XPS RPS RFS
 
 Проект рассчитан на Linux c установленными lscpu, ethtool и правами для записи в sysfs/procfs через post-up (обычно требуется root).
 

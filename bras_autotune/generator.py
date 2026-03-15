@@ -1,79 +1,87 @@
+
 from pathlib import Path
 from bras_autotune.nic import detect_irqs_for_if
 
 def generate_interfaces_snippet(cfg):
-        out = Path(cfg["out_dir"]) / "interfaces.bras"
-        if_wan = cfg["if_wan"]
-        if_bras = cfg["if_bras"]
+    out = Path(cfg["out_dir"]) / "interfaces.bras"
+    if_wan = cfg["if_wan"]
+    if_bras = cfg["if_bras"]
 
-        data_mask = cfg["data_mask_hex"]
-        data_list = cfg["data_cpu_list"]
+    data_mask = cfg["data_mask_hex"]
+    data_list = cfg["data_cpu_list"]
 
-        rxq_wan = cfg["rxq_wan"]
-        rxq_bras = cfg["rxq_bras"]
+    rxq_wan = cfg["rxq_wan"]
+    rxq_bras = cfg["rxq_bras"]
 
-        lines = []
-        lines.append("# Auto-generated BRAS tuning")
+    with open(out, "w", encoding="utf-8") as f:
 
-        lines.append(f"auto {if_wan}")
-        lines.append(f"iface {if_wan} inet manual")
-        lines.append(f"    post-up ethtool -L {if_wan} combined {rxq_wan}")
-        lines.append("")
-        lines.append("    # XPS")
+        f.write("# Auto-generated BRAS tuning\n\n")
+
+        # WAN
+        f.write(f"auto {if_wan}\n")
+        f.write(f"iface {if_wan} inet manual\n")
+        f.write(f"    post-up ethtool -L {if_wan} combined {rxq_wan}\n\n")
+
+        f.write("    # XPS\n")
         for q in range(rxq_wan):
-            lines.append(f"    post-up echo {data_mask} > /sys/class/net/{if_wan}/queues/tx-{q}/xps_cpus")
-        lines.append("")
+            f.write(f"    post-up echo {data_mask} > /sys/class/net/{if_wan}/queues/tx-{q}/xps_cpus\n")
+        f.write("\n")
 
-        lines.append(f"auto {if_bras}")
-        lines.append(f"iface {if_bras} inet manual")
-        lines.append(f"    post-up ethtool -L {if_bras} combined {rxq_bras}")
-        lines.append("")
-        lines.append("    # XPS")
-        for q in range(rxq_bras):
-            lines.append(f"    post-up echo {data_mask} > /sys/class/net/{if_bras}/queues/tx-{q}/xps_cpus")
-        lines.append("")
-        lines.append("    # RPS")
-        for q in range(rxq_bras):
-            lines.append(f"    post-up echo {data_mask} > /sys/class/net/{if_bras}/queues/rx-{q}/rps_cpus")
-        lines.append("")
-        lines.append("    # RFS")
-        lines.append("    post-up echo 65536 > /proc/sys/net/core/rps_sock_flow_entries")
-        for q in range(rxq_bras):
-            lines.append(f"    post-up echo 8192 > /sys/class/net/{if_bras}/queues/rx-{q}/rps_flow_cnt")
-        lines.append("")
+        # BRAS
+        f.write(f"auto {if_bras}\n")
+        f.write(f"iface {if_bras} inet manual\n")
+        f.write(f"    post-up ethtool -L {if_bras} combined {rxq_bras}\n\n")
 
+        f.write("    # XPS\n")
+        for q in range(rxq_bras):
+            f.write(f"    post-up echo {data_mask} > /sys/class/net/{if_bras}/queues/tx-{q}/xps_cpus\n")
+        f.write("\n")
+
+        f.write("    # RPS\n")
+        for q in range(rxq_bras):
+            f.write(f"    post-up echo {data_mask} > /sys/class/net/{if_bras}/queues/rx-{q}/rps_cpus\n")
+        f.write("\n")
+
+        f.write("    # RFS\n")
+        f.write("    post-up echo 65536 > /proc/sys/net/core/rps_sock_flow_entries\n")
+        for q in range(rxq_bras):
+            f.write(f"    post-up echo 8192 > /sys/class/net/{if_bras}/queues/rx-{q}/rps_flow_cnt\n")
+        f.write("\n")
+
+        # RSS
+        f.write("    # RSS (IRQ affinity)\n")
         irqs = detect_irqs_for_if(if_bras)
-        lines.append(f"    # RSS (IRQ affinity)")
         idx = 0
         for irq in irqs:
             core = data_list[idx]
             mask = format(1 << core, "x")
-            lines.append(f"    post-up echo {mask} > /proc/irq/{irq}/smp_affinity")
+            f.write(f"    post-up echo {mask} > /proc/irq/{irq}/smp_affinity\n")
             idx = (idx + 1) % len(data_list)
-        lines.append("")
+        f.write("\n")
 
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text("".join(lines) + "")
-        print(f"interfaces.bras → {out}")
+    print(f"interfaces.bras → {out}")
+
 
 def generate_cmdline_snippet(cfg):
-        out = Path(cfg["out_dir"]) / "cmdline.txt"
-        d = cfg["data_cores"]
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(f"isolcpus=0-{d-1} nohz_full=0-{d-1} rcu_nocbs=0-{d-1}")
-        print(f"cmdline.txt → {out}")
+    out = Path(cfg["out_dir"]) / "cmdline.txt"
+    d = cfg["data_cores"]
+
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(f"isolcpus=0-{d-1} nohz_full=0-{d-1} rcu_nocbs=0-{d-1}\n")
+
+    print(f"cmdline.txt → {out}")
+
 
 def generate_systemd_pinning(cfg):
-        out = Path(cfg["out_dir"]) / "systemd-pinning.sh"
-        ctrl = " ".join(map(str, cfg["ctrl_cpu_list"]))
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(
-        "#!/bin/bash\n"
-        "SERVICES=(bird bird6 accel-ppp ssh sshd snmpd systemd-journald rsyslog cron)\n"
-        "for SVC in \"${SERVICES[@]}\"; do\n"
-        f"    systemctl set-property \"$SVC\".service AllowedCPUs={ctrl} || true\n"
-        "done\n"
+    out = Path(cfg["out_dir"]) / "systemd-pinning.sh"
+    ctrl = " ".join(map(str, cfg["ctrl_cpu_list"]))
 
-        )
-        out.chmod(0o755)
-        print(f"systemd-pinning.sh → {out}")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("#!/bin/bash\n")
+        f.write("SERVICES=(bird bird6 accel-ppp ssh sshd snmpd systemd-journald rsyslog cron)\n")
+        f.write("for SVC in \"${SERVICES[@]}\"; do\n")
+        f.write(f"    systemctl set-property \"$SVC\".service AllowedCPUs={ctrl} || true\n")
+        f.write("done\n")
+
+    out.chmod(0o755)
+    print(f"systemd-pinning.sh → {out}")

@@ -7,13 +7,21 @@ RSS XPS RPS RFS
 
 Установка пакета локально (editable):
 
-python -m venv .venv
+git clone https://github.com/maxx1980/bras-autotune
+
+cd bras-autotune
+
+python3 -m venv .venv
 
 source .venv/bin/activate
 
 pip install -U pip
 
 pip install -e .
+
+Либо скачиваем пакет bras-autotune_1.0-1_all.deb 
+
+dpkg -i bras-autotune_1.0-1_all.deb 
 
 Запуск CLI: bras-autotune
 

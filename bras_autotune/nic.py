@@ -212,3 +212,20 @@ def get_ring_buffers(iface):
         return None
 
     return f"RX {rx_cur}/{rx_max}, TX {tx_cur}/{tx_max}"
+# ---------------------------------------------------------
+# 7. Получение txqueuelen
+# ---------------------------------------------------------
+def get_interface_txqueuelen(iface):
+    """
+    Возвращает txqueuelen интерфейса (int) или None, если недоступно.
+    """
+    path = f"/sys/class/net/{iface}/tx_queue_len"
+
+    if not os.path.exists(path):
+        return None
+
+    try:
+        with open(path, "r") as f:
+            return int(f.read().strip())
+    except:
+        return None

@@ -15,12 +15,26 @@ def colorize(cur, maxv):
     - без цвета, если maxv неизвестен
     """
     if maxv is None or maxv == "unknown":
-        return f"{cur} (max {maxv})"
+#        return f"{cur} (max {maxv})"
+        return f"\\Z1\\Zb{cur}\\Zn (max {maxv})"   # красный жирный
 
     if cur < maxv:
         return f"\\Z1\\Zb{cur}\\Zn (max {maxv})"   # красный жирный
     else:
         return f"\\Z4\\Zb{cur}\\Zn (max {maxv})"   # синий yжирный
+def colorize_txq(value):
+    """
+    Подсветка txqueuelen:
+    - красный жирный, если < 10000
+    - тёмно-синий жирный, если >= 10000
+    """
+    if value is None:
+        return "unknown"
+
+    if value < 10000:
+        return f"\\Z1\\Zb{value}\\Zn"   # красный жирный
+    else:
+        return f"\\Z4\\Zb{value}\\Zn"   # тёмно-синий жирный
 
 
 # -----------------------------
@@ -81,6 +95,14 @@ def info_menu(d):
         text += f"  {iface}:\n"
 
         # -----------------------------
+        # TX-qk
+        # -----------------------------
+
+        txq = info["interface_txqueuelen"].get(iface)
+        txq = colorize_txq(txq)
+        text += f"      TXqlen: {txq}\n"
+
+        # -----------------------------
         # Очереди (структура)
         # -----------------------------
         qc = info["queues"].get(iface)
@@ -111,7 +133,7 @@ def info_menu(d):
             except:
                 text += f"      Буферы:  {rb}\n\n"
         else:
-            text += f"      Буферы:  not supported\n\n"
+            text += f"      Буферы:  \\Z1\\Zbnot supported\\Zn\n\n"
 
     d.msgbox(text, width=70, height=25)
 

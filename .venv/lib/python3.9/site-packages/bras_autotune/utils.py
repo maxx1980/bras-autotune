@@ -1,6 +1,7 @@
 import os
 import subprocess
-from bras_autotune.nic import list_physical_interfaces, get_ring_buffers, get_interface_queues
+from bras_autotune.nic import list_physical_interfaces, get_ring_buffers, get_interface_queues, get_interface_txqueuelen
+#from bras_autotune.nic import *
 
 def collect_system_info():
     info = {}
@@ -48,6 +49,13 @@ def collect_system_info():
     for iface in info["interfaces"]:
         queues[iface] = get_interface_queues(iface)
     info["queues"] = queues
+
+    txq = {}
+    for iface in info["interfaces"]:
+        txq[iface] = get_interface_txqueuelen(iface)
+
+    # TX queuesen
+    info["interface_txqueuelen"] = txq
 
     return info   # ← ЭТО ОБЯЗАТЕЛЬНО
 

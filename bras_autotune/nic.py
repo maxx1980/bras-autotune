@@ -153,7 +153,7 @@ def get_interface_speed(iface):
 
 
 # ---------------------------------------------------------
-# 5. Получение драйвера интерфейса
+# 5. Получение драйвера интерфейса и прощшивки
 # ---------------------------------------------------------
 def get_interface_driver(iface):
     """
@@ -168,6 +168,27 @@ def get_interface_driver(iface):
             return line.split(":", 1)[1].strip()
 
     return None
+
+def get_interface_fw(iface):
+    """
+    Возвращает прошивку интерфейса (строка) или 'unknown'.
+    """
+    out = run_ethtool(["-i", iface])
+    if out is None:
+        return "unknown"
+
+    for line in out.splitlines():
+        line_low = line.lower().strip()
+
+        if line_low.startswith("firmware-version:"):
+            value = line.split(":", 1)[1].strip()
+            if value == "" or value.lower() == "n/a":
+                return "unknown"
+            return value
+
+    return "unknown"
+
+
 # ---------------------------------------------------------
 # 6. Buffers
 # ---------------------------------------------------------
@@ -229,3 +250,46 @@ def get_interface_txqueuelen(iface):
             return int(f.read().strip())
     except:
         return None
+# ---------------------------------------------------------
+# 8. Получение информации про PCI
+# ---------------------------------------------------------
+
+def get_pcie_lnksta(addr):
+    if addr is None:
+        return None
+
+    base = f"/sys/bus/pci/devices/{addr}"
+
+    try:
+        with open(f"{base}/current_link_speed") as f:
+            speed = f.read().strip()
+
+        with open(f"{base}/current_link_width") as f:
+            width = f.read().strip()
+
+        with open(f"{base}/max_link_speed") as f:
+            max_speed = f.read().strip()
+
+        with open(f"{base}/max_link_width") as f:
+            max_width = f.read().strip()
+
+    except Exception:
+        return None
+
+    return {
+        "speed": speed,
+        "width": width,
+        "max_speed": max_speed,
+        "max_width": max_width,
+    }
+
+def get_pci_from_ethtool(iface):
+    out = run_ethtool(["-i", iface])
+    if out is None:
+        return None
+
+    for line in out.splitlines():
+        if "bus-info:" in line.lower():
+            return line.split(":", 1)[1].strip()
+
+    return None

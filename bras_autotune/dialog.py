@@ -92,33 +92,41 @@ def info_menu(d):
     )
 
     for iface in info["interfaces"]:
-        text += f"  {iface}:\n"
+        drv = info["driver"].get(iface)
+        fw = info["fw"].get(iface)
 
-        # -----------------------------
-        # TX-qk
-        # -----------------------------
+        text += f"  {iface} driver: {drv} firmware: {fw}\n"
 
+        # TX queue
         txq = info["interface_txqueuelen"].get(iface)
         txq = colorize_txq(txq)
-        text += f"      TXqlen: {txq}\n"
+        text += f"        TXqlen: {txq}\n"
 
-        # -----------------------------
-        # Очереди (структура)
-        # -----------------------------
+        # PCIe
+        lnk = info["pcie"][iface]["lnksta"]
+
+        speed = lnk["speed"]
+        width = int(lnk["width"])
+        max_speed = lnk["max_speed"]
+        max_width = int(lnk["max_width"])
+
+        speed_colored = colorize(speed, max_speed)
+        width_colored = colorize(width, max_width)
+
+        text += f"        PCIe: Width {width_colored}\n"
+        text += f"              Speed {speed_colored}\n"
+
+        # Очереди
         qc = info["queues"].get(iface)
-
         if isinstance(qc, dict):
             rx_str = colorize(qc["rx_cur"], qc["rx_max"])
             tx_str = colorize(qc["tx_cur"], qc["tx_max"])
-            text += f"      Очереди: RX {rx_str}, TX {tx_str}\n"
+            text += f"        Очереди: RX {rx_str}, TX {tx_str}\n"
         else:
-            text += f"      Очереди: {qc}\n"
+            text += f"        Очереди: {qc}\n"
 
-        # -----------------------------
-        # Буферы (строка вида "RX 1024/4096, TX 2048/4096")
-        # -----------------------------
+        # Буферы
         rb = info["rings"].get(iface, "not supported")
-
         if rb != "not supported":
             try:
                 rx_part, tx_part = rb.split(",")
@@ -128,14 +136,16 @@ def info_menu(d):
                 rx_buf = colorize(rx_cur, rx_max)
                 tx_buf = colorize(tx_cur, tx_max)
 
-                text += f"      Буферы:  RX {rx_buf}, TX {tx_buf}\n\n"
-
+                text += f"        Буферы: RX {rx_buf}, TX {tx_buf}\n\n"
             except:
-                text += f"      Буферы:  {rb}\n\n"
+                text += f"        Буферы: {rb}\n\n"
         else:
-            text += f"      Буферы:  \\Z1\\Zbnot supported\\Zn\n\n"
+            text += f"        Буферы: \\Z1\\Zbnot supported\\Zn\n\n"
 
-    d.msgbox(text, width=70, height=25)
+#    # Добавляем отступ в 8 пробелов
+#    indented = "\n".join("        " + line for line in text.splitlines())
+
+    d.msgbox(text, width=100, height=30)
 
 
 # -----------------------------

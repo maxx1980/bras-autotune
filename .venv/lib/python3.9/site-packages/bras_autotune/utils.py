@@ -1,7 +1,7 @@
 import os
 import subprocess
-from bras_autotune.nic import list_physical_interfaces, get_ring_buffers, get_interface_queues, get_interface_txqueuelen
-#from bras_autotune.nic import *
+#from bras_autotune.nic import list_physical_interfaces, get_ring_buffers, get_interface_queues, get_interface_txqueuelen
+from bras_autotune.nic import *
 
 def collect_system_info():
     info = {}
@@ -50,12 +50,41 @@ def collect_system_info():
         queues[iface] = get_interface_queues(iface)
     info["queues"] = queues
 
+    # TX queuesen
+
     txq = {}
     for iface in info["interfaces"]:
         txq[iface] = get_interface_txqueuelen(iface)
 
-    # TX queuesen
     info["interface_txqueuelen"] = txq
+    # Diver
+
+    drv = {}
+    for iface in info["interfaces"]:
+        drv[iface] = get_interface_driver(iface)
+
+    info["driver"] = drv
+    # fw
+
+    fw = {}
+    for iface in info["interfaces"]:
+        fw[iface] = get_interface_fw(iface)
+
+    info["fw"] = fw
+
+    # pcistat
+
+    info["pcie"] = {}
+
+    for iface in info["interfaces"]:
+        pci = get_pci_from_ethtool(iface)
+        lnksta = get_pcie_lnksta(pci)
+
+        info["pcie"][iface] = {
+            "pci": pci,
+            "lnksta": lnksta
+        }
+
 
     return info   # ← ЭТО ОБЯЗАТЕЛЬНО
 

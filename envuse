@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Create venv if not exists
+if [ ! -d ".venv" ]; then
+    echo "[INFO] Creating virtual environment..."
+    python3 -m venv .venv --system-site-packages
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to create virtual environment."
+        return 1 2>/dev/null || exit 1
+    fi
+    echo "[OK] Virtual environment created."
+else
+    echo "[INFO] Virtual environment already exists."
+fi
+
+# Activate venv
+echo "[INFO] Activating virtual environment..."
+source .venv/bin/activate
+
+if [ $? -ne 0 ]; then
+    echo "[ERROR] Failed to activate virtual environment."
+    return 1 2>/dev/null || exit 1
+fi
+
+echo "[OK] Virtual environment activated."
+echo "[READY] You are now working inside the virtual environment."

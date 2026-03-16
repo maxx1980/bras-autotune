@@ -1,0 +1,1 @@
+isolcpus=0-1 nohz_full=0-1 rcu_nocbs=0-1

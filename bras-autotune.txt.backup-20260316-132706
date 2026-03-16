@@ -1,0 +1,16 @@
+
+BRAS AUTOTUNE RESULT
+====================
+
+WAN interface:      enp3s0f1
+BRAS interface:     enp3s0f0
+DATA-plane cores:   2
+CPU mask (hex):     3
+
+WAN RX queues:      2
+BRAS RX queues:     2
+
+DATA CPU list:      [0, 1]
+CTRL CPU list:      [2, 3]
+
+Output directory:   /home/maxx/bras-autotune

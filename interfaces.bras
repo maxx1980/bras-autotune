@@ -1,0 +1,32 @@
+# Auto-generated BRAS tuning
+
+auto enp3s0f0
+iface enp3s0f0 inet manual
+    post-up ethtool -L enp3s0f0 combined 2
+
+    # XPS
+    post-up echo 3 > /sys/class/net/enp3s0f0/queues/tx-0/xps_cpus
+    post-up echo 3 > /sys/class/net/enp3s0f0/queues/tx-1/xps_cpus
+
+auto enp3s0f1
+iface enp3s0f1 inet manual
+    post-up ethtool -L enp3s0f1 combined 2
+
+    # XPS
+    post-up echo 3 > /sys/class/net/enp3s0f1/queues/tx-0/xps_cpus
+    post-up echo 3 > /sys/class/net/enp3s0f1/queues/tx-1/xps_cpus
+
+    # RPS
+    post-up echo 3 > /sys/class/net/enp3s0f1/queues/rx-0/rps_cpus
+    post-up echo 3 > /sys/class/net/enp3s0f1/queues/rx-1/rps_cpus
+
+    # RFS
+    post-up echo 65536 > /proc/sys/net/core/rps_sock_flow_entries
+    post-up echo 8192 > /sys/class/net/enp3s0f1/queues/rx-0/rps_flow_cnt
+    post-up echo 8192 > /sys/class/net/enp3s0f1/queues/rx-1/rps_flow_cnt
+
+    # RSS (IRQ affinity)
+    post-up echo 1 > /proc/irq/131/smp_affinity
+    post-up echo 2 > /proc/irq/132/smp_affinity
+    post-up echo 1 > /proc/irq/133/smp_affinity
+

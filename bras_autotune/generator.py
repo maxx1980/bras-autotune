@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from bras_autotune.nic import detect_irqs_for_if
 

@@ -1,42 +1,82 @@
 import os
-from bras_autotune.pe_detect import detect_pe_cores
+from pathlib import Path
+from bras_autotune.nic import list_physical_interfaces
+
+import os
+from pathlib import Path
+from bras_autotune.nic import list_physical_interfaces
 
 def interactive_select_ifaces_and_cores():
-        print("=== BRAS AUTOTUNE ===")
+    print("=== BRAS AUTOTUNE ===")
 
-        if_wan = input("WAN интерфейс [enp1s0f0]: ").strip() or "enp1s0f0"
-        if_bras = input("BRAS интерфейс [enp1s0f1]: ").strip() or "enp1s0f1"
+    # Получаем физические интерфейсы
+    phys = list_physical_interfaces()
 
-        total = os.cpu_count() or 1
-        print(f"Всего CPU: {total}")
+    print("\nДоступные физические интерфейсы:")
+    for i, iface in enumerate(phys):
+        print(f"  {i}: {iface}")
 
-        p, e = detect_pe_cores()
-        auto = False
+    # Выбор WAN
+    wan_idx = int(input("\nВыберите WAN интерфейс (номер): "))
+    if_wan = phys[wan_idx]
 
-        if p or e:
-            print(f"P-ядра: {p}")
-            print(f"E-ядра: {e}")
-            ans = input("Использовать P-ядра под DATA-plane? [Y/n]: ").strip() or "Y"
-            if ans.lower().startswith("y"):
-                data = len(p)
-                ctrl = total - data
-                auto = True
-                print(f"DATA={data}, CONTROL={ctrl}")
+    # Выбор BRAS
+    bras_idx = int(input("Выберите LAN интерфейс (номер): "))
+    if_bras = phys[bras_idx]
 
-        if not auto:
-            while True:
-                s = input("DATA-plane ядер: ").strip()
-                if s.isdigit() and 1 <= int(s) < total:
-                    data = int(s)
-                    break
+    # CPU
+    total = os.cpu_count() or 1
+    print(f"\nВсего CPU: {total}")
 
-            ctrl = total - data
+    data_cores = int(input("DATA-plane ядер: "))
+    data_cpu_list = list(range(data_cores))
+    ctrl_cpu_list = list(range(data_cores, total))
 
-        return {
-            "if_wan": if_wan,
-            "if_bras": if_bras,
-            "total_cores": total,
-            "data_cores": data,
-            "ctrl_cores": ctrl,
-            "out_dir": "/root/bras-autotune",
-        }
+    # Выбор места сохранения
+    print("\nКуда сохранить результат?")
+    print("  1: Домашний каталог (~/bras-autotune)")
+    print("  2: /tmp/bras-autotune")
+    print("  3: /etc/network/interfaces.d/bras.conf (готовый конфиг)")
+
+    save_choice = int(input("Выберите вариант: "))
+
+    # Логика путей
+    if save_choice == 1:
+        out_dir = str(Path.home() / "bras-autotune")
+        etc_mode = False
+
+    elif save_choice == 2:
+        out_dir = "/tmp/bras-autotune"
+        etc_mode = False
+
+    elif save_choice == 3:
+        out_dir = "/etc/network/interfaces.d"
+        etc_mode = True
+
+    else:
+        print("Неверный выбор, используем домашний каталог.")
+        out_dir = str(Path.home() / "bras-autotune")
+        etc_mode = False
+
+    cfg = {
+        "if_wan": if_wan,
+        "if_bras": if_bras,
+        "data_cores": data_cores,
+        "data_cpu_list": data_cpu_list,
+        "ctrl_cpu_list": ctrl_cpu_list,
+        "data_mask_hex": format((1 << data_cores) - 1, "x"),
+        "rxq_wan": 2,
+        "rxq_bras": 2,
+        "out_dir": out_dir,
+        "etc_mode": etc_mode
+    }
+
+    if etc_mode:
+        print("\nКонфиг будет сохранён в:")
+        print("  /etc/network/interfaces.d/bras.conf")
+        print("\nЧтобы применить конфигурацию:")
+        print("  systemctl restart networking")
+        print("или")
+        print("  reboot")
+
+    return cfg

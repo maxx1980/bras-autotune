@@ -1,15 +1,15 @@
 import os
 import subprocess
 
-# ---------------------------------------------------------
+
+# ============================================================
 # 1. Безопасный вызов ethtool
-# ---------------------------------------------------------
+# ============================================================
 def run_ethtool(args):
     """
     Безопасный вызов ethtool.
     Возвращает строку или None, если команда не поддерживается.
     """
-    # Полный путь — чтобы работало в venv и под обычным пользователем
     ETHTOOL = "/usr/sbin/ethtool"
 
     if not os.path.exists(ETHTOOL):
@@ -25,9 +25,9 @@ def run_ethtool(args):
         return None
 
 
-# ---------------------------------------------------------
+# ============================================================
 # 2. Фильтрация физических интерфейсов
-# ---------------------------------------------------------
+# ============================================================
 def list_physical_interfaces():
     """
     Возвращает список ТОЛЬКО физических интерфейсов.
@@ -79,8 +79,9 @@ def list_physical_interfaces():
     return ifaces
 
 
-# ---------------------------------------------------------
-# 3. Получение RX/TX очередей
+# ============================================================
+# 3. Очереди интерфейса
+# ============================================================
 def get_interface_queues(iface):
     """
     Возвращает структуру:
@@ -91,7 +92,6 @@ def get_interface_queues(iface):
         "tx_max": int | None
     }
     """
-
     qpath = f"/sys/class/net/{iface}/queues"
     if not os.path.exists(qpath):
         return {"rx_cur": 0, "tx_cur": 0, "rx_max": None, "tx_max": None}
@@ -134,31 +134,68 @@ def get_interface_queues(iface):
         "rx_max": rx_max,
         "tx_max": tx_max,
     }
-# ---------------------------------------------------------
-# 4. Получение скорости интерфейса
-# ---------------------------------------------------------
+
+
+# ============================================================
+# 4. Скорость интерфейса
+# ============================================================
 def get_interface_speed(iface):
     """
-    Возвращает скорость интерфейса (если поддерживается).
+    Возвращает скорость интерфейса из нескольких источников:
+    1) ethtool (основной источник)
+    2) /sys/class/net/<iface>/speed
+    3) /sys/class/net/<iface>/operstate
     """
+
+    # ---------------------------------------------------------
+    # 1. Попытка получить скорость через ethtool
+    # ---------------------------------------------------------
     out = run_ethtool(["-i", iface])
-    if out is None:
-        return None
+    if out:
+        for line in out.splitlines():
+            if "speed" in line.lower():
+                val = line.split(":", 1)[1].strip()
+                if val and "unknown" not in val.lower():
+                    return val
 
-    for line in out.splitlines():
-        if "speed" in line.lower():
-            return line.strip()
+    # ---------------------------------------------------------
+    # 2. Попытка получить скорость через sysfs
+    # ---------------------------------------------------------
+    sys_speed = f"/sys/class/net/{iface}/speed"
+    if os.path.exists(sys_speed):
+        try:
+            with open(sys_speed) as f:
+                val = f.read().strip()
+                # speed может быть "-1" или "unknown"
+                if val.isdigit() and int(val) > 0:
+                    return f"{val}Mb/s"
+        except:
+            pass
 
-    return None
+    # ---------------------------------------------------------
+    # 3. Проверка operstate (up/down)
+    # ---------------------------------------------------------
+    oper = f"/sys/class/net/{iface}/operstate"
+    if os.path.exists(oper):
+        try:
+            with open(oper) as f:
+                state = f.read().strip()
+                if state == "down":
+                    return "down"
+                if state == "unknown":
+                    return "unknown"
+        except:
+            pass
 
+    # ---------------------------------------------------------
+    # 4. Если ничего не удалось определить
+    # ---------------------------------------------------------
+    return "unknown"
 
-# ---------------------------------------------------------
-# 5. Получение драйвера интерфейса и прощшивки
-# ---------------------------------------------------------
+# ============================================================
+# 5. Драйвер и прошивка
+# ============================================================
 def get_interface_driver(iface):
-    """
-    Возвращает драйвер интерфейса.
-    """
     out = run_ethtool(["-i", iface])
     if out is None:
         return None
@@ -169,10 +206,8 @@ def get_interface_driver(iface):
 
     return None
 
+
 def get_interface_fw(iface):
-    """
-    Возвращает прошивку интерфейса (строка) или 'unknown'.
-    """
     out = run_ethtool(["-i", iface])
     if out is None:
         return "unknown"
@@ -189,10 +224,10 @@ def get_interface_fw(iface):
     return "unknown"
 
 
-# ---------------------------------------------------------
-# 6. Buffers
-# ---------------------------------------------------------
-def get_ring_buffers(iface):
+# ============================================================
+# 6. Buffers (ring)
+# ============================================================
+def get_interface_ring(iface):
     out = run_ethtool(["-g", iface])
     if out is None:
         return None
@@ -232,14 +267,18 @@ def get_ring_buffers(iface):
     if rx_cur is None or tx_cur is None:
         return None
 
-    return f"RX {rx_cur}/{rx_max}, TX {tx_cur}/{tx_max}"
-# ---------------------------------------------------------
-# 7. Получение txqueuelen
-# ---------------------------------------------------------
+    return {
+        "rx_cur": rx_cur,
+        "rx_max": rx_max,
+        "tx_cur": tx_cur,
+        "tx_max": tx_max,
+    }
+
+
+# ============================================================
+# 7. TX queue length
+# ============================================================
 def get_interface_txqueuelen(iface):
-    """
-    Возвращает txqueuelen интерфейса (int) или None, если недоступно.
-    """
     path = f"/sys/class/net/{iface}/tx_queue_len"
 
     if not os.path.exists(path):
@@ -250,11 +289,25 @@ def get_interface_txqueuelen(iface):
             return int(f.read().strip())
     except:
         return None
-# ---------------------------------------------------------
-# 8. Получение информации про PCI
-# ---------------------------------------------------------
 
-def get_pcie_lnksta(addr):
+
+# ============================================================
+# 8. PCIe
+# ============================================================
+def get_interface_pci(iface):
+    out = run_ethtool(["-i", iface])
+    if out is None:
+        return None
+
+    for line in out.splitlines():
+        if "bus-info:" in line.lower():
+            return line.split(":", 1)[1].strip()
+
+    return None
+
+
+def get_interface_lnksta(iface):
+    addr = get_interface_pci(iface)
     if addr is None:
         return None
 
@@ -282,14 +335,3 @@ def get_pcie_lnksta(addr):
         "max_speed": max_speed,
         "max_width": max_width,
     }
-
-def get_pci_from_ethtool(iface):
-    out = run_ethtool(["-i", iface])
-    if out is None:
-        return None
-
-    for line in out.splitlines():
-        if "bus-info:" in line.lower():
-            return line.split(":", 1)[1].strip()
-
-    return None

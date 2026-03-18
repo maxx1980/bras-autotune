@@ -40,6 +40,25 @@ def colorize_txq(value):
 # -----------------------------
 # Главный инсталлер
 # -----------------------------
+def info_menu(d):
+    info = collect_system_info()
+
+    # Список интерфейсов
+    choices = [(iface, "") for iface in info["interfaces"]]
+
+    while True:
+        code, iface = d.menu(
+            "Информация об интерфейсах",
+            choices=choices,
+            width=60,
+            height=20
+        )
+
+        if code != d.OK:
+            return
+
+        # СРАЗУ открываем окно свойств
+        show_interface_details(d, info, iface)
 def bras_autotune_installer():
     d = Dialog(dialog="dialog")
     d.set_background_title("BRAS AUTOTUNE")
@@ -81,72 +100,162 @@ def bras_autotune_installer():
 def info_menu(d):
     info = collect_system_info()
 
+    choices = [(iface, "") for iface in info["interfaces"]]
+
+    while True:
+        code, iface = d.menu(
+            "Информация об интерфейсах",
+            choices=choices,
+            width=60,
+            height=20
+        )
+
+        if code != d.OK:
+            return
+
+        show_interface_main(d, info, iface)
+def show_interface_main(d, info, iface):
+    drv = info["driver"].get(iface)
+    fw = info["fw"].get(iface)
+    txq_raw = info["interface_txqueuelen"].get(iface)
+    txq = colorize_txq(txq_raw)
+
+    lnk = info["pcie"][iface]["lnksta"]
+    width_raw = int(lnk["width"])
+    max_width = int(lnk["max_width"])
+    speed_raw = lnk["speed"]
+    max_speed = lnk["max_speed"]
+
+    width = colorize(width_raw, max_width)
+    speed = colorize(speed_raw, max_speed)
+
+    qc = info["queues"].get(iface)
+    if isinstance(qc, dict):
+        rx = colorize(qc["rx_cur"], qc["rx_max"])
+        tx = colorize(qc["tx_cur"], qc["tx_max"])
+        queues = f"RX {rx}, TX {tx}"
+    else:
+        queues = qc
+
+    rb = info["rings"].get(iface, "not supported")
+
+    # -----------------------------
+    # ДИНАМИЧЕСКИЕ РЕКОМЕНДАЦИИ
+    # -----------------------------
+    rec = []
+
+    if width_raw < max_width:
+        rec.append(f"\\Z1PCIe работает на {width_raw} линиях, поддерживает {max_width}!\\Zn")
+
+    if txq_raw is not None and txq_raw < 10000:
+        rec.append("ip link set= {iface} 10000")
+                    #      f"ip link set {iface} trtxqueuelen 10000\n"
+    if not rec:
+        rec.append("\\Z4Проблем не обнаружено\\Zn")
+
+    rec_text = "\n".join(rec)
+
+    # -----------------------------
+    # ТЕКСТ ОКНА MAIN
+    # -----------------------------
     text = (
-        "СИСТЕМНАЯ ИНФОРМАЦИЯ\n"
-        "====================\n\n"
-        f"CPU cores: {info['cpu_cores']}\n"
-        f"NUMA nodes: {info['numa_nodes']}\n"
-        f"Interfaces: {', '.join(info['interfaces'])}\n"
-        f"IRQ count: {info['irq_count']}\n\n"
-        "Интерфейсы:\n"
+        f"Интерфейс: \\Zb{iface}\\Zn\n"
+        f"Driver: {drv}\n"
+        f"Firmware: {fw}\n\n"
+        f"TXQLEN: {txq}\n"
+        f"PCIe Width: {width}\n"
+        f"PCIe Speed: {speed}\n"
+        f"Очереди: {queues}\n"
+        f"Буферы: {rb}\n\n"
+        "Рекомендации:\n"
+        f"{rec_text}\n\n"
+        "Выберите действие:\n"
+        "  • Сохранить — записать команды тюнинга в файл\n"
+        "  • Отмена — вернуться назад\n"
+        "  • Дополнительно — открыть ethtool inspection\n"
     )
 
-    for iface in info["interfaces"]:
-        drv = info["driver"].get(iface)
-        fw = info["fw"].get(iface)
+    code, btn = d.menu(
+        text,
+        choices=[
+            ("save", "Сохранить"),
+            ("ethtool", "Ethtool"),
+            ("back", "Назад"),
+        ],
+        width=90,
+        height=35
+    )
 
-        text += f"  {iface} driver: {drv} firmware: {fw}\n"
 
-        # TX queue
-        txq = info["interface_txqueuelen"].get(iface)
-        txq = colorize_txq(txq)
-        text += f"        TXqlen: {txq}\n"
 
-        # PCIe
-        lnk = info["pcie"][iface]["lnksta"]
+    if code != d.OK:
+        return
 
-        speed = lnk["speed"]
-        width = int(lnk["width"])
-        max_speed = lnk["max_speed"]
-        max_width = int(lnk["max_width"])
+    if btn == "save":
+        save_tuning_commands(d, iface, info)
+        return show_interface_main(d, info, iface)
 
-        speed_colored = colorize(speed, max_speed)
-        width_colored = colorize(width, max_width)
+    elif btn == "ethtool":
+        return show_ethtool_inspection(d, iface)
 
-        text += f"        PCIe: Width {width_colored}\n"
-        text += f"              Speed {speed_colored}\n"
+    elif btn == "back":
+        return
 
-        # Очереди
-        qc = info["queues"].get(iface)
-        if isinstance(qc, dict):
-            rx_str = colorize(qc["rx_cur"], qc["rx_max"])
-            tx_str = colorize(qc["tx_cur"], qc["tx_max"])
-            text += f"        Очереди: RX {rx_str}, TX {tx_str}\n"
-        else:
-            text += f"        Очереди: {qc}\n"
+def show_ethtool_inspection(d, iface):
+    import subprocess
 
-        # Буферы
-        rb = info["rings"].get(iface, "not supported")
-        if rb != "not supported":
-            try:
-                rx_part, tx_part = rb.split(",")
-                rx_cur, rx_max = map(int, rx_part.strip()[3:].split("/"))
-                tx_cur, tx_max = map(int, tx_part.strip()[3:].split("/"))
+    i_out = subprocess.getoutput(f"ethtool -i {iface}")
+    g_out = subprocess.getoutput(f"ethtool -g {iface}")
+    l_out = subprocess.getoutput(f"ethtool -l {iface}")
+    k_out = subprocess.getoutput(f"ethtool -k {iface}")
 
-                rx_buf = colorize(rx_cur, rx_max)
-                tx_buf = colorize(tx_cur, tx_max)
+    text = (
+        f"\\ZbEthtool inspection: {iface}\\Zn\n"
+        "===============================\n\n"
+        "\\Z4ethtool -i\\Zn\n"
+        f"{i_out}\n\n"
+        "\\Z4ethtool -g\\Zn\n"
+        f"{g_out}\n\n"
+        "\\Z4ethtool -l\\Zn\n"
+        f"{l_out}\n"
+        "\\Z4ethtool -k\\Zn\n"
+        f"{k_out}\n"
+    )
 
-                text += f"        Буферы: RX {rx_buf}, TX {tx_buf}\n\n"
-            except:
-                text += f"        Буферы: {rb}\n\n"
-        else:
-            text += f"        Буферы: \\Z1\\Zbnot supported\\Zn\n\n"
+    d.msgbox(text, width=100, height=40)
+def save_tuning_commands(d, iface, info):
+    cmds = []
 
-#    # Добавляем отступ в 8 пробелов
-#    indented = "\n".join("        " + line for line in text.splitlines())
+    txq = info["interface_txqueuelen"].get(iface)
+    if txq is not None and txq < 10000:
+        cmds.append(f"ip link set {iface} txqueuelen 10000")
 
-    d.msgbox(text, width=100, height=30)
+    lnk = info["pcie"][iface]["lnksta"]
+    width = int(lnk["width"])
+    max_width = int(lnk["max_width"])
+    if width < max_width:
+        cmds.append(f"# ВНИМАНИЕ: {iface} работает на ширине {width}, максимум {max_width}")
 
+    if not cmds:
+        cmds.append("# Нет доступных команд тюнинга")
+
+    cmd_text = "\n".join(cmds)
+
+    code, path = d.inputbox(
+        "Введите путь для сохранения файла:",
+        init=f"/tmp/{iface}-tuning.sh",
+        width=60
+    )
+
+    if code != d.OK:
+        return
+
+    try:
+        with open(path, "w") as f:
+            f.write(cmd_text)
+        d.msgbox(f"Команды сохранены в {path}")
+    except Exception as e:
+        d.msgbox(f"Ошибка сохранения: {e}")
 
 # -----------------------------
 # 2. Настройка системы
@@ -176,7 +285,7 @@ def system_menu(d, cfg):
 
 
 # -----------------------------
-# 2.1 Настройка CPU
+# 2.1 Настройка CPUF
 # -----------------------------
 def cpu_setup(d, cfg):
     total = get_cpu_info()["cores"]
@@ -298,3 +407,34 @@ def save_setup(d, cfg):
         cfg["out_dir"] = out
         cfg["etc_mode"] = (out == "/etc/network/interfaces.d")
         d.msgbox(f"Выбрано: {out}")
+from bras_autotune.irq import get_interface_irqs, get_irq_distribution, summarize_irq_distribution
+# irq sub
+
+def show_irq_distribution(d, iface):
+    irqs = get_interface_irqs(iface)
+
+    if not irqs:
+        d.msgbox(f"Для интерфейса {iface} не найдено IRQ.", width=60)
+        return
+
+    dist = get_irq_distribution(irqs)
+    summary = summarize_irq_distribution(dist)
+
+    # Формируем красивый вывод
+    text = f"IRQ распределение для интерфейса: {iface}\n"
+    text += "=" * 60 + "\n\n"
+
+    text += "IRQ → CPU распределение:\n\n"
+    for irq, cpu_map in dist.items():
+        text += f"IRQ {irq}:\n"
+        for cpu, count in cpu_map.items():
+            text += f"   CPU{cpu}: {count}\n"
+        text += "\n"
+
+    text += "\nСуммарная нагрузка по CPU:\n"
+    text += "-" * 60 + "\n"
+
+    for cpu, total in summary.items():
+        text += f"CPU{cpu}: {total}\n"
+
+    d.msgbox(text, width=90, height=40)

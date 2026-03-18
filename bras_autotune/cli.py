@@ -3,10 +3,11 @@ import traceback
 import logging
 import os
 
-from bras_autotune.dialog import bras_autotune_installer
 from bras_autotune.generator import generate_config
 from bras_autotune.fallback import fallback_mode
 from bras_autotune.doctor import run_doctor
+from bras_autotune.ui.app import run_textual_ui
+
 
 # Логи
 LOG_DIR = os.path.expanduser("~/.local/share/bras-autotune")
@@ -29,10 +30,10 @@ def main():
         return
 
     # -----------------------------
-    # Запуск TUI
+    # Запуск нового Textual UI
     # -----------------------------
     try:
-        cfg = bras_autotune_installer()
+        cfg = run_textual_ui()
 
         if not cfg:
             print("Операция отменена пользователем.")
@@ -40,10 +41,10 @@ def main():
             return
 
     except Exception as e:
-        logging.error("Dialog mode failed: %s", str(e))
+        logging.error("Textual UI failed: %s", str(e))
         logging.error(traceback.format_exc())
 
-        print("\nОшибка в TUI интерфейсе. Переключаюсь в fallback режим.\n")
+        print("\nОшибка в интерфейсе. Переключаюсь в fallback режим.\n")
         cfg = fallback_mode()
 
     # -----------------------------

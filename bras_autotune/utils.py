@@ -1,8 +1,23 @@
 import os
 import subprocess
-#from bras_autotune.nic import list_physical_interfaces, get_ring_buffers, get_interface_queues, get_interface_txqueuelen
-from bras_autotune.nic import *
 
+# Импортируем ВСЕ функции из обновлённого nic.py
+from bras_autotune.nic import (
+    list_physical_interfaces,
+    get_interface_queues,
+    get_interface_ring,
+    get_interface_txqueuelen,
+    get_interface_driver,
+    get_interface_fw,
+    get_interface_speed,
+    get_interface_pci,
+    get_interface_lnksta,
+)
+
+
+# =====================================================================
+# 1. Сбор общей системной информации (CPU, NUMA, IRQ, интерфейсы)
+# =====================================================================
 def collect_system_info():
     info = {}
 
@@ -10,9 +25,10 @@ def collect_system_info():
     info["cpu_cores"] = os.cpu_count()
 
     # Interfaces
-    info["interfaces"] = list_physical_interfaces()
+    interfaces = list_physical_interfaces()
+    info["interfaces"] = interfaces
 
-    # NUMA
+    # NUMA nodes
     try:
         out = subprocess.check_output(["lscpu", "-p=NODE,CPU"]).decode()
         nodes = {}
@@ -24,72 +40,165 @@ def collect_system_info():
             cpu = int(cpu)
             nodes.setdefault(node, []).append(cpu)
         info["numa_nodes"] = nodes
-    except:
+    except Exception:
         info["numa_nodes"] = {"0": list(range(info["cpu_cores"]))}
 
     # IRQ count
     try:
         irq = subprocess.check_output("ls /proc/irq | wc -l", shell=True).decode().strip()
         info["irq_count"] = int(irq)
-    except:
+    except Exception:
         info["irq_count"] = 0
 
-    # Buffers
-    rings = {}
-    for iface in info["interfaces"]:
-        rb = get_ring_buffers(iface)
-        if rb is None:
-            rings[iface] = "not supported"
-        else:
-            rings[iface] = rb  # ← уже строка!
-    info["rings"] = rings
+    # Ring buffers
+    info["rings"] = {
+        iface: get_interface_ring(iface) or "not supported"
+        for iface in interfaces
+    }
 
     # RX/TX queues
-    queues = {}
-    for iface in info["interfaces"]:
-        queues[iface] = get_interface_queues(iface)
-    info["queues"] = queues
+    info["queues"] = {
+        iface: get_interface_queues(iface)
+        for iface in interfaces
+    }
 
-    # TX queuesen
+    # TX queue length
+    info["interface_txqueuelen"] = {
+        iface: get_interface_txqueuelen(iface)
+        for iface in interfaces
+    }
 
-    txq = {}
-    for iface in info["interfaces"]:
-        txq[iface] = get_interface_txqueuelen(iface)
+    # Driver
+    info["driver"] = {
+        iface: get_interface_driver(iface)
+        for iface in interfaces
+    }
 
-    info["interface_txqueuelen"] = txq
-    # Diver
+    # Firmware
+    info["fw"] = {
+        iface: get_interface_fw(iface)
+        for iface in interfaces
+    }
 
-    drv = {}
-    for iface in info["interfaces"]:
-        drv[iface] = get_interface_driver(iface)
+    # PCIe info
+    pcie = {}
+    for iface in interfaces:
+        pci = get_interface_pci(iface)
+        lnksta = get_interface_lnksta(iface)
+        pcie[iface] = {"pci": pci, "lnksta": lnksta}
 
-    info["driver"] = drv
-    # fw
+    info["pcie"] = pcie
 
-    fw = {}
-    for iface in info["interfaces"]:
-        fw[iface] = get_interface_fw(iface)
-
-    info["fw"] = fw
-
-    # pcistat
-
-    info["pcie"] = {}
-
-    for iface in info["interfaces"]:
-        pci = get_pci_from_ethtool(iface)
-        lnksta = get_pcie_lnksta(pci)
-
-        info["pcie"][iface] = {
-            "pci": pci,
-            "lnksta": lnksta
-        }
+    return info
 
 
-    return info   # ← ЭТО ОБЯЗАТЕЛЬНО
+# =====================================================================
+# 2. Полная статика для TUI (интерфейсы + health + needs_tuning)
+def get_all_interfaces_stats():
+    try:
+        interfaces = list_physical_interfaces()
+        result = {}
 
+        for iface in interfaces:
+
+            queues = get_interface_queues(iface)
+            ring = get_interface_ring(iface)
+            txq = get_interface_txqueuelen(iface)
+            driver = get_interface_driver(iface)
+            fw = get_interface_fw(iface)
+            speed_raw = get_interface_speed(iface)
+            pci_addr = get_interface_pci(iface)
+            pcie_status = get_interface_lnksta(iface)
+
+            # Если что-то None — заменяем безопасным значением
+            if queues is None:
+                queues = {"rx_cur": 0, "tx_cur": 0}
+
+            if ring is None:
+                ring = {"rx_cur": 0, "rx_max": 0, "tx_cur": 0, "tx_max": 0}
+
+            if pcie_status is None:
+                pcie_status = {"speed": None, "width": None}
+
+            # HEALTH
+            health = {}
+
+            # Buffers
+            health["buffers"] = (
+                "OK" if ring.get("rx_cur", 0) >= 512 else "NOT_OK"
+            )
+
+            # PCIe presence
+            health["pci"] = (
+                "OK" if pcie_status.get("width") else "NOT_OK"
+            )
+
+            # Firmware
+            health["fw"] = (
+                "OK" if fw not in (None, "", "unknown") else "NOT_OK"
+            )
+
+            # Driver
+            health["driver"] = (
+                "OK" if driver not in (None, "", "unknown") else "NOT_OK"
+            )
+
+            # Queues
+            health["queues"] = (
+                "OK" if queues.get("rx_cur", 0) > 0 else "NOT_OK"
+            )
+
+            # Speed
+            speed_flag = "OK"
+            if speed_raw in (None, "unknown", "down"):
+                speed_flag = "NOT_OK"
+
+            health["speed"] = speed_flag
+
+            # PCIe speed
+            width = pcie_status.get("width")
+            if width is None:
+                health["pcie_speed"] = "NOT_OK"
+            else:
+                try:
+                    w = int(width.replace("x", ""))
+                    health["pcie_speed"] = "OK" if w >= 4 else "NOT_OK"
+                except:
+                    health["pcie_speed"] = "NOT_OK"
+
+            # PCIe generation
+            speed = pcie_status.get("speed")
+            if speed is None:
+                health["pcie_generation"] = "NOT_OK"
+            else:
+                try:
+                    gt = float(speed.replace("GT/s", ""))
+                    health["pcie_generation"] = "OK" if gt >= 8.0 else "NOT_OK"
+                except:
+                    health["pcie_generation"] = "NOT_OK"
+
+            needs_tuning = any(v == "NOT_OK" for v in health.values())
+
+            result[iface] = {
+                "speed": speed_raw,
+                "driver": driver,
+                "fw": fw,
+                "ring_buffers": ring,
+                "txqueuelen": txq,
+                "pci_addr": pci_addr,
+                "pcie_status": pcie_status,
+                "queues": queues,
+                "health": health,
+                "needs_tuning": needs_tuning,
+            }
+
+        return result
+
+    except Exception as e:
+        print("ERROR in get_all_interfaces_stats:", e)
+        return {}
+# =====================================================================
+# 3. Вспомогательная функция
+# =====================================================================
 def run(cmd):
     return subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL).strip()
-
-
-

@@ -1,0 +1,36 @@
+README.md
+setup.py
+bras_autotune/__init__.py
+bras_autotune/cli.py
+bras_autotune/cpu.py
+bras_autotune/dialog.py
+bras_autotune/doctor.py
+bras_autotune/fallback.py
+bras_autotune/generator.py
+bras_autotune/irq.py
+bras_autotune/nic.py
+bras_autotune/pe_detect.py
+bras_autotune/ui.py
+bras_autotune/utils copy.py
+bras_autotune/utils.py
+bras_autotune.egg-info/PKG-INFO
+bras_autotune.egg-info/SOURCES.txt
+bras_autotune.egg-info/dependency_links.txt
+bras_autotune.egg-info/entry_points.txt
+bras_autotune.egg-info/top_level.txt
+bras_autotune/live/__init__.py
+bras_autotune/live/net.py
+bras_autotune/live/stats.py
+bras_autotune/ui/__init__.py
+bras_autotune/ui/app.py
+bras_autotune/ui/dashboard.py
+bras_autotune/ui/ethtool.py
+bras_autotune/ui/generate.py
+bras_autotune/ui/interface copy.py
+bras_autotune/ui/interface.py
+bras_autotune/ui/interface_view.py
+bras_autotune/ui/interfaces.py
+bras_autotune/ui/irq.py
+bras_autotune/ui/menu.py
+bras_autotune/ui/nterfaces.py
+bras_autotune/ui/pcie.py

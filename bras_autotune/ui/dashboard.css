@@ -1,0 +1,30 @@
+/* Фон всего приложения */
+App {
+    background: #000080;
+    color: white;
+}
+
+/* Верхнее меню */
+#menubar {
+    background: #0000aa;
+    color: white;
+    padding: 1 2;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    background: #0000aa;
+    border: solid #00ff2f;
+    padding: 0 1;
+}
+
+/* Пункты */
+.dropdown-item {
+    background: #0000aa;
+    color: white;
+}
+
+.dropdown-item.selected {
+    background: #0055ff;
+    color: yellow;
+}

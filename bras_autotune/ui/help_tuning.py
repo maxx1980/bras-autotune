@@ -15,7 +15,8 @@ intel 520, enp1s0f0 смотрит в мир enp1s0f1 смотрит на кли
 
 [b]Основные темы:[/b]
 • Настройка IRQ affinity 
-Прибиваем прерывания к ядрам
+Прибиваем прерывания к ядрам маска=номер ядра 
+1-0 2-1 3-4 8-3 10-4 20-5 40-6 80-7
 
 echo 1 > /proc/irq/126/smp_affinity #enp1s0f0-Rx-Tx0
 echo 1 > /proc/irq/135/smp_affinity #enp1s0f1-Tx-Rx0
@@ -162,6 +163,15 @@ echo 40 > /proc/irq/146/smp_affinity #enp1s0f1-Tx-Rx4
 
 echo 80 > /proc/irq/131/smp_affinity #enp1s0f0-Rx-Tx5
 echo 80 > /proc/irq/147/smp_affinity #enp1s0f1-Tx-Rx5
+маска считается по аналогии 
+CPU0-2⁰-0x01
+CPU1-2¹-0x02
+CPU2-2²-0x04
+CPU3-2³-0x08
+CPU4-2⁴-0x10
+CPU5-2⁵-0x20
+CPU6-2⁶-0x40
+CPU7-2⁷-0x80
 хекс маска для 2-7 ядра fc
 если PPPOE включаем RPS 
 MASK=fc

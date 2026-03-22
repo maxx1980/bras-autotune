@@ -124,9 +124,18 @@ def get_all_interfaces_stats():
             health = {}
 
             # Buffers
-            health["buffers"] = (
-                "OK" if ring.get("rx_cur", 0) >= 512 else "NOT_OK"
-            )
+            rx_max = ring.get("rx_max") or 0
+            rx_cur = ring.get("rx_cur") or 0
+            tx_max = ring.get("tx_max") or 0
+            tx_cur = ring.get("tx_cur") or 0
+
+            if rx_max == 0 or tx_max == 0:
+                health["buffers"] = "NOT_SUPPORTED"
+            elif rx_max == rx_cur and tx_max == tx_cur:
+                health["buffers"] = "OK"
+            else:
+                health["buffers"] = "NOT_OK"
+
 
             # PCIe presence
             health["pci"] = (
@@ -135,7 +144,7 @@ def get_all_interfaces_stats():
 
             # Firmware
             health["fw"] = (
-                "OK" if fw not in (None, "", "unknown") else "NOT_OK"
+                "OK" if fw not in (None, "", "unknown") else "NOT_SUPPORTED"
             )
 
             # Driver

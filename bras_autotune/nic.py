@@ -233,36 +233,40 @@ def get_interface_ring(iface):
         return None
 
     rx_cur = tx_cur = rx_max = tx_max = None
+    mode = None  # "max" или "cur"
 
     for line in out.splitlines():
-        line = line.strip().lower()
+        line = line.strip()
 
-        if line.startswith("rx:") and rx_max is None:
-            try:
-                rx_max = int(line.split()[1])
-            except:
-                pass
-
-        if line.startswith("tx:") and tx_max is None:
-            try:
-                tx_max = int(line.split()[1])
-            except:
-                pass
-
-        if "current hardware settings" in line:
+        if line.startswith("Pre-set maximums"):
+            mode = "max"
             continue
 
-        if line.startswith("rx:") and rx_cur is None and rx_max is not None:
-            try:
-                rx_cur = int(line.split()[1])
-            except:
-                pass
+        if line.startswith("Current hardware settings"):
+            mode = "cur"
+            continue
 
-        if line.startswith("tx:") and tx_cur is None and tx_max is not None:
+        if line.startswith("RX:"):
             try:
-                tx_cur = int(line.split()[1])
+                val = int(line.split()[1])
             except:
-                pass
+                continue
+
+            if mode == "max":
+                rx_max = val
+            elif mode == "cur":
+                rx_cur = val
+
+        if line.startswith("TX:"):
+            try:
+                val = int(line.split()[1])
+            except:
+                continue
+
+            if mode == "max":
+                tx_max = val
+            elif mode == "cur":
+                tx_cur = val
 
     if rx_cur is None or tx_cur is None:
         return None
@@ -273,6 +277,7 @@ def get_interface_ring(iface):
         "tx_cur": tx_cur,
         "tx_max": tx_max,
     }
+
 
 
 # ============================================================

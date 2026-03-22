@@ -2,19 +2,23 @@ from textual.widgets import Static
 from textual.reactive import reactive
 
 from bras_autotune.utils import get_all_interfaces_stats, list_physical_interfaces
-from bras_autotune.ui.screens import InterfacesView
-from bras_autotune.mon.live import LiveCPUView
 
 
+# ============================================================
+# Структура меню
+# ============================================================
 MENU_ITEMS = {
-    "Interfaces": ["__interfaces__"],
-    "Monitoring": ["Live", "Affinity"],
+    "Interfaces": ["__interfaces__", "PCIe", "IRQ", "Ethtool"],
+    "CPU": ["Governor", "Affinity"],
     "System": ["Dmesg", "Sysctl"],
     "Help": ["About"],
     "Exit": ["Quit"],
 }
 
 
+# ============================================================
+# Выпадающее меню (MC‑стиль)
+# ============================================================
 class DropdownMenu(Static):
     can_focus = True
 
@@ -23,6 +27,8 @@ class DropdownMenu(Static):
         self.items = items
         self.parent_menu = parent_menu
         self.selected = 0
+
+        # ширина текста (для выравнивания стрелки)
         self.menu_width = max(len(i) for i in items) + 4
 
     def compose(self):
@@ -67,6 +73,9 @@ class DropdownMenu(Static):
             self.parent_menu.close_dropdown()
 
 
+# ============================================================
+# Верхнее меню
+# ============================================================
 class MenuBar(Static):
     can_focus = True
 
@@ -93,11 +102,14 @@ class MenuBar(Static):
 
         submenu = MENU_ITEMS[self.items[self.selected]]
 
+        # динамическое подменю интерфейсов
         if "__interfaces__" in submenu:
             interfaces = list_physical_interfaces()
-            submenu = interfaces + [i for i in submenu if i != "__interfaces__"]
+            submenu = interfaces + [item for item in submenu if item != "__interfaces__"]
 
         self.dropdown = DropdownMenu(submenu, self)
+
+        # позиционируем подменю под выбранным пунктом
         self.dropdown.styles.margin = (1, 0, 0, self.selected * 12)
 
         self.mount(self.dropdown)
@@ -111,18 +123,13 @@ class MenuBar(Static):
 
     def activate_dropdown_item(self, item):
 
-        interfaces = list_physical_interfaces()
-
-        if item in interfaces:
+        # если выбрали интерфейс
+        if item in list_physical_interfaces():
             stats = get_all_interfaces_stats()
-            self.app.screen.show_interface_details(item, stats[item])
+            from bras_autotune.ui.dashboard import InterfacesScreen
+            self.app.push_screen(InterfacesScreen(stats))
             self.close_dropdown()
             return
-        if item == "Live":
-            self.app.screen.show_live_monitoring()
-            self.close_dropdown()
-            return
-
 
         if item == "Quit":
             self.app.exit()
@@ -131,11 +138,13 @@ class MenuBar(Static):
 
     def on_key(self, event):
 
+        # если открыто подменю — не трогаем клавиши
         if self.dropdown:
             return
 
         key = event.key
 
+        # стрелки влево/вправо — переключают пункты меню
         if key == "left":
             self.selected = (self.selected - 1) % len(self.items)
             self.label.update(self.render_menu())
@@ -146,6 +155,7 @@ class MenuBar(Static):
             self.label.update(self.render_menu())
             return
 
+        # Enter — открыть подменю
         if key == "enter":
             self.open_dropdown()
             return

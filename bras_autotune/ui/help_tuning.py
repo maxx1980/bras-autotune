@@ -182,7 +182,6 @@ MASK=fc
 for i in /sys/class/net/enp1s0f1/queues/rx-*/rps_cpus; do
     echo $MASK > $i
 done
-гдк i 2-7
 иначе
 MASK=0
 for i in /sys/class/net/enp1s0f1/queues/rx-*/rps_cpus; do

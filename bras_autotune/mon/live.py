@@ -13,6 +13,8 @@ def detect_active_iface():
     for iface, st in stats.items():
         if iface == "lo":
             continue
+        if iface.startswith("ppp"):
+            continue
         if not st.isup:
             continue
         if iface not in addrs:
@@ -111,7 +113,7 @@ class LiveCPUView(Vertical):
     def __init__(self):
         super().__init__()
         self.update_interval = 1
-        self.iface = "eth0"
+        self.iface = detect_active_iface()
         from collections import defaultdict, deque
         self.history_irq = defaultdict(lambda: deque(maxlen=60))
         self.history_soft = defaultdict(lambda: deque(maxlen=60))

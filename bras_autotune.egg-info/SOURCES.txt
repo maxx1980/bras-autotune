@@ -18,8 +18,9 @@ bras_autotune.egg-info/dependency_links.txt
 bras_autotune.egg-info/entry_points.txt
 bras_autotune.egg-info/top_level.txt
 bras_autotune/mon/__init__.py
+bras_autotune/mon/irq.py
 bras_autotune/mon/live.py
-bras_autotune/mon/softirq.py
+bras_autotune/mon/soft_net.py
 bras_autotune/ui/__init__.py
 bras_autotune/ui/dashboard.py
 bras_autotune/ui/menu.py

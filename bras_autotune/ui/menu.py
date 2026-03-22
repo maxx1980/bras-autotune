@@ -3,12 +3,12 @@ from textual.reactive import reactive
 
 from bras_autotune.utils import get_all_interfaces_stats, list_physical_interfaces
 from bras_autotune.ui.screens import InterfacesView
-from bras_autotune.mon.live import LiveCPUView
+
 
 
 MENU_ITEMS = {
     "Interfaces": ["__interfaces__"],
-    "Monitoring": ["Live", "Affinity"],
+    "Monitoring": ["Live", "Irq monitoring"],
     "System": ["Dmesg", "Sysctl"],
     "Help": ["About"],
     "Exit": ["Quit"],
@@ -122,7 +122,10 @@ class MenuBar(Static):
             self.app.screen.show_live_monitoring()
             self.close_dropdown()
             return
-
+        if item == "Irq monitoring":
+            self.app.screen.show_irq_monitoring()
+            self.close_dropdown()
+            return
 
         if item == "Quit":
             self.app.exit()

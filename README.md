@@ -14,12 +14,12 @@ cd bras-autotune
 sudo apt install ./debian_pkg.deb
 
 либо 
+
 python3 -m venv .venv
-
 source .venv/bin/activate
-
 pip install -U pip
-
+pip install textual==0.50.1
+pip install psutil
 pip install -e .
 
 Запуск TuI: bras-autotune

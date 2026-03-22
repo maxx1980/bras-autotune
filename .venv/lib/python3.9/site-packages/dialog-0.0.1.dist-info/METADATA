@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: dialog
+Version: 0.0.1
+Summary: An empty project created via script
+Author-email: Your Name <you@example.com>
+Project-URL: Homepage, https://example.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: license-file
+
+# dialog
+
+This is a sample project created automatically.

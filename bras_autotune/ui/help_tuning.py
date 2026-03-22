@@ -17,29 +17,29 @@ intel 520, enp1s0f0 смотрит в мир enp1s0f1 смотрит на кли
 • Настройка IRQ affinity 
 Прибиваем прерывания к ядрам
 
-echo 1 > /proc/irq/126/smp_affinity #enp1s0f0rxtx0
-echo 1 > /proc/irq/135/smp_affinity #enp1s0f1txrx0
+echo 1 > /proc/irq/126/smp_affinity #enp1s0f0-Rx-Tx0
+echo 1 > /proc/irq/135/smp_affinity #enp1s0f1-Tx-Rx0
 
-echo 2 > /proc/irq/127/smp_affinity #enp1s0f0rxtx1
-echo 2 > /proc/irq/136/smp_affinity #enp1s0f1txrx1
+echo 2 > /proc/irq/127/smp_affinity #enp1s0f0-Rx-Tx1
+echo 2 > /proc/irq/136/smp_affinity #enp1s0f1-Tx-Rx1
 
-echo 4 > /proc/irq/128/smp_affinity #enp1s0f0rxtx2
-echo 4 > /proc/irq/137/smp_affinity #enp1s0f1txrx2
+echo 4 > /proc/irq/128/smp_affinity #enp1s0f0-Rx-Tx2
+echo 4 > /proc/irq/137/smp_affinity #enp1s0f1-Tx-Rx2
 
-echo 8 > /proc/irq/129/smp_affinity #enp1s0f0rxtx3
-echo 8 > /proc/irq/138/smp_affinity #enp1s0f1txrx3
+echo 8 > /proc/irq/129/smp_affinity #enp1s0f0-Rx-Tx3
+echo 8 > /proc/irq/138/smp_affinity #enp1s0f1-Tx-Rx3
 
-echo 10 > /proc/irq/130/smp_affinity #enp1s0f0rxtx4
-echo 10 > /proc/irq/139/smp_affinity #enp1s0f1txrx4
+echo 10 > /proc/irq/130/smp_affinity #enp1s0f0-Rx-Tx4
+echo 10 > /proc/irq/139/smp_affinity #enp1s0f1-Tx-Rx4
 
-echo 20 > /proc/irq/131/smp_affinity #enp1s0f0rxtx5
-echo 20 > /proc/irq/140/smp_affinity #enp1s0f1txrx5
+echo 20 > /proc/irq/131/smp_affinity #enp1s0f0-Rx-Tx5
+echo 20 > /proc/irq/140/smp_affinity #enp1s0f1-Tx-Rx5
 
-echo 40 > /proc/irq/132/smp_affinity #enp1s0f0rxtx6
-echo 40 > /proc/irq/141/smp_affinity #enp1s0f1txrx6
+echo 40 > /proc/irq/132/smp_affinity #enp1s0f0-Rx-Tx6
+echo 40 > /proc/irq/141/smp_affinity #enp1s0f1-Tx-Rx6
 
-echo 80 > /proc/irq/133/smp_affinity #enp1s0f0rxtx7
-echo 80 > /proc/irq/142/smp_affinity #enp1s0f1txrx7
+echo 80 > /proc/irq/133/smp_affinity #enp1s0f0-Rx-Tx7
+echo 80 > /proc/irq/142/smp_affinity #enp1s0f1-Tx-Rx7
 
 • XPS/RPS
 XPS включается на обоих интерфейсах путем отсылания хекс маски,
@@ -101,9 +101,11 @@ ethtool -K enp1s0f0 tso off gso off gro off rxvlan off txvlan off rx-vlan-filter
 ethtool -K enp1s0f1 tso off gso off gro off rxvlan off txvlan off rx-vlan-filter off ntuple on tx-gso-partial off
 сушествуют мнения про то что настройка оффлоадов на внешенем и внутреннем интерфейас отличаются,
 не могу утверждать, проверял зеркало, проблемы с скоростью отсутствуют, но вопрос нужно до изучать. 
-ip link set eth0 txqueuelen 10000 по умолчанию он 1000 этого мало
+ip link set enp1s0f0 txqueuelen 10000
+ip link set enp1s0f1 txqueuelen 10000 по умолчанию он 1000 этого мало
 • Настройки sysctl для высоких нагрузок
-Опять же мнений очень много, все ситуативно опишу минимум который протестил на нагрузках 8-9 Gb\ps и 5 к сессий пппое.
+Опять же мнений очень много, все ситуативно, зависит от железа и степени агрессивности, 
+опишу минимум который протестил на нагрузках 8-9 Gb\ps и 5 к сессий пппое.
 /etc/sysctl.d/99-bras.conf
 
 ########## Core buffers ##########
@@ -139,30 +141,34 @@ GRUB_CMDLINE_LINUX="isolcpus=2-7 nohz_full=2-7 rcu_nocbs=2-7"
 уменьшаем количество очередей сетевой до 6
 ethtool -L enp1s0f0 combined 6
 ethtool -L enp1s0f1 combined 6
-прибиваем к 2-7 ядрам это и будет наш датаплейн
-echo 4 > /proc/irq/126/smp_affinity #enp1s0f0rxtx0
-echo 4 > /proc/irq/142/smp_affinity #enp1s0f1txrx0
+прибиваем к 2-7 ядрам, это и будет наш датаплейн,
+(если у вас проц с енергоээффективными ядрами, логика там обратная,
+датаплейн вешается на 0-7 полные ядра, контрол на 8-11, слабые,
+маска там соответственно другая)
+echo 4 > /proc/irq/126/smp_affinity #enp1s0f0-Rx-Tx0
+echo 4 > /proc/irq/142/smp_affinity #enp1s0f1-Tx-Rx0
 
-echo 8 > /proc/irq/127/smp_affinity #enp1s0f0rxtx1
-echo 8 > /proc/irq/143/smp_affinity #enp1s0f1txrx1
+echo 8 > /proc/irq/127/smp_affinity #enp1s0f0-Rx-Tx1
+echo 8 > /proc/irq/143/smp_affinity #enp1s0f1-Tx-Rx1
 
-echo 10 > /proc/irq/128/smp_affinity #enp1s0f0rxtx2
-echo 10 > /proc/irq/144/smp_affinity #enp1s0f1txrx2
+echo 10 > /proc/irq/128/smp_affinity #enp1s0f0-Rx-Tx2
+echo 10 > /proc/irq/144/smp_affinity #enp1s0f1-Tx-Rx2
 
-echo 20 > /proc/irq/129/smp_affinity #enp1s0f0rxtx3
-echo 20 > /proc/irq/145/smp_affinity #enp1s0f1txrx3
+echo 20 > /proc/irq/129/smp_affinity #enp1s0f0-Rx-Tx3
+echo 20 > /proc/irq/145/smp_affinity #enp1s0f1-Tx-Rx3
 
-echo 40 > /proc/irq/130/smp_affinity #enp1s0f0rxtx4
-echo 40 > /proc/irq/146/smp_affinity #enp1s0f1txrx4
+echo 40 > /proc/irq/130/smp_affinity #enp1s0f0-Rx-Tx4
+echo 40 > /proc/irq/146/smp_affinity #enp1s0f1-Tx-Rx4
 
-echo 80 > /proc/irq/131/smp_affinity #enp1s0f0rxtx5
-echo 80 > /proc/irq/147/smp_affinity #enp1s0f1txrx5
+echo 80 > /proc/irq/131/smp_affinity #enp1s0f0-Rx-Tx5
+echo 80 > /proc/irq/147/smp_affinity #enp1s0f1-Tx-Rx5
 хекс маска для 2-7 ядра fc
 если PPPOE включаем RPS 
 MASK=fc
 for i in /sys/class/net/enp1s0f1/queues/rx-*/rps_cpus; do
     echo $MASK > $i
 done
+гдк i 2-7
 иначе
 MASK=0
 for i in /sys/class/net/enp1s0f1/queues/rx-*/rps_cpus; do
@@ -183,7 +189,7 @@ done
 [Service]
 CPUAffinity=0 1
 не забываем что нулевоя адро всегда нагружено больше, на нем много дефолтных
-задач в статике и сменить спу там нельзя. Что вынести:
+задач в статике и сменить цпу там нельзя. Что вынести, решать вам?
 системные: systemd, journald, rsyslog, sshd, cron, dbus, acpid, kworkers
 роутинг: BIRD / FRR / OSPF / BGP
 доступ: pppd, accel-ppp, Radius client (auth/accounting)

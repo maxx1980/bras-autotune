@@ -22,5 +22,5 @@ pip install -U pip
 
 pip install -e .
 
-Запуск CLI: bras-autotune
+Запуск TuI: bras-autotune
 

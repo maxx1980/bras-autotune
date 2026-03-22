@@ -1,0 +1,9 @@
+Package: bras-autotune
+Version: 1.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Maxx <you@example.com>
+Depends: python3, python3-psutil, python3-pip
+Description: Network & CPU live monitoring TUI tool
+ A Textual-based monitoring tool for CPU, IRQ, SoftIRQ, ksoftirqd, kworker, RPS and ring buffers.

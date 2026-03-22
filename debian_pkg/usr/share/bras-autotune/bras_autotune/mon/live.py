@@ -4,29 +4,6 @@ from textual.app import ComposeResult
 from textual.reactive import reactive
 import psutil
 import os
-import socket
-
-def detect_active_iface():
-    stats = psutil.net_if_stats()
-    addrs = psutil.net_if_addrs()
-
-    for iface, st in stats.items():
-        if iface == "lo":
-            continue
-        if not st.isup:
-            continue
-        if iface not in addrs:
-            continue
-
-        # есть IPv4?
-        has_ipv4 = any(a.family == socket.AF_INET for a in addrs[iface])
-        if not has_ipv4:
-            continue
-
-        return iface
-
-    return "lo"  # fallback
-
 # масштабирование графиков
 def make_bar(value, max_value, width=30):
     if max_value <= 0:
@@ -142,8 +119,6 @@ class LiveCPUView(Vertical):
 
             # ---------------- RIGHT COLUMN ----------------
             with Vertical(id="right-col"):
-                self.iface_label = Static(f"[u]Interface:[/u] {self.iface}")
-                yield self.iface_label
                 yield Static("\n[u]RPS Activity (softnet_stat)[/u]")
                 self.rps_graph = Static("")
                 yield self.rps_graph
@@ -193,7 +168,7 @@ class LiveCPUView(Vertical):
 
 
     # ---------------- SoftIRQ ----------------
-    def update_softirq(self):   
+    def update_softirq(self):
         now = read_softirq_per_cpu()
         diff = [now[i] - self.soft_prev[i] for i in range(len(now))]
         self.soft_prev = now

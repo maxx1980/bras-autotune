@@ -13,7 +13,9 @@ cd bras-autotune
 
 sudo apt install ./debian_pkg.deb
 
-либо 
+externally‑managed‑environment означает, що твоя система (Ubuntu/Debian) блокырует установку пакетов через pip3 install в системный Python.
+
+лучще и правильнее 
 
 python3 -m venv .venv
 
@@ -26,6 +28,8 @@ pip install textual==0.50.1
 pip install psutil
 
 pip install -e .
+
+звпуск bras-autotune
 
 Запуск TuI: bras-autotune
 

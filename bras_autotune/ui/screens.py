@@ -84,7 +84,9 @@ class InterfaceDetailsView(Vertical):
         self.stats = stats
 
     def compose(self):
-        yield Static(f"[bold]Интерфейс: {self.iface}[/bold]\n")
+        yield Static(f"[bold]Интерфейс: {self.iface}[/bold]\n"
+                     "[b]↑ back to menu[/b]\n"
+                     )
 
         # Две колонки
         with Horizontal(id="details-columns"):

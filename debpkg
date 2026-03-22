@@ -1,0 +1,3 @@
+#!/bin/bash
+cp -r bras_autotune debian_pkg/usr/share/bras-autotune/
+dpkg-deb --build debian_pkg

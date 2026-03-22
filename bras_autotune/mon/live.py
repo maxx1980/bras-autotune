@@ -121,7 +121,9 @@ class LiveCPUView(Vertical):
 
 
     def compose(self) -> ComposeResult:
-        yield Static("[bold]Live Monitoring[/bold]\n")
+        yield Static("[bold]Live Monitoring[/bold]\n"
+                     "[b]↑ back to menu[/b]\n"
+                    )
 
         with Horizontal():
 

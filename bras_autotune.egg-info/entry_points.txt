@@ -1,3 +1,0 @@
-[console_scripts]
-bras-autotune = bras_autotune.cli:main
-

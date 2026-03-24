@@ -21,12 +21,12 @@ App {
 
 /* Пункты */
 .dropdown-item {
-    background: #0000aa;
+    background: blue;
     color: white;
 }
 
 .dropdown-item.selected {
-    background: blue;
+    background: darkblue;
     color: yellow;
 }
 #content {

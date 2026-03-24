@@ -220,14 +220,15 @@ class StepIRQs:
             wan_val = wan_input.value.strip()
             lan_val = lan_input.value.strip()
 
-            if wan_val.isdigit():
+            if wan_val.isdigit() and row.get("wan_irq") is not None:
                 mask = hex(1 << int(wan_val))
                 row["wan_mask"] = mask
                 lines.append(
                     f"echo {mask} > /proc/irq/{row['wan_irq']}/smp_affinity  # WAN queue {q}"
                 )
 
-            if lan_val.isdigit():
+            if lan_val.isdigit()and row.get("lan_irq") is not None:
+
                 mask = hex(1 << int(lan_val))
                 row["lan_mask"] = mask
                 lines.append(

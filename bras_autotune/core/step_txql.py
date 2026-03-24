@@ -1,5 +1,3 @@
-# bras_autotune/core/step_txql.py
-
 from textual.widgets import Static, Input
 from textual.containers import Vertical
 from textual.events import Key
@@ -12,8 +10,7 @@ class StepTXQL:
         self._input = None
         self._wan_current = None
         self._lan_current = None
-
-    # ---------------- Чтение текущего TXQL ----------------
+        self._error = None
 
     @staticmethod
     def read_txql(iface):
@@ -26,8 +23,6 @@ class StepTXQL:
         except Exception:
             return None
 
-    # ---------------- render ----------------
-
     def render(self, wizard):
 
         wan = wizard.state.wan
@@ -36,13 +31,11 @@ class StepTXQL:
         wan_txql = self.read_txql(wan)
         lan_txql = self.read_txql(lan)
 
-        # WAN
         if wan:
             wan_text = f"WAN ({wan}) текущий TXQL: {wan_txql if wan_txql is not None else '–'}"
         else:
             wan_text = "WAN интерфейс не выбран"
 
-        # LAN
         if lan:
             lan_text = f"LAN ({lan}) текущий TXQL: {lan_txql if lan_txql is not None else '–'}"
         else:
@@ -51,19 +44,21 @@ class StepTXQL:
         self._wan_current = Static(wan_text, classes="txql-current")
         self._lan_current = Static(lan_text, classes="txql-current")
 
-        # Поле ввода — рекомендованное значение 10000
         self._input = Input(
             placeholder="Например: 10000",
             value="10000",
             id="tx_queue_len",
         )
 
+        # Поле для ошибок
+        self._error = Static("", classes="txql-error")
+
         step = self
 
         class StepContainer(Vertical):
 
             def on_mount(self_inner):
-                step._input.focus()   # автофокус
+                step._input.focus()
 
             async def on_key(self_inner, event: Key):
                 if event.key != "enter":
@@ -72,8 +67,27 @@ class StepTXQL:
                 event.stop()
 
                 value = step._input.value.strip()
-                wizard.state.tx_queue_len = int(value) if value.isdigit() else None
 
+                # -------------------------------
+                # Валидация: только числа
+                # -------------------------------
+                if not value.isdigit():
+                    step._error.update("Ошибка: введите число")
+                    return
+
+                num = int(value)
+
+                # -------------------------------
+                # Валидация диапазона 1000–10000
+                # -------------------------------
+                if not (1000 <= num <= 10000):
+                    step._error.update("Ошибка: значение должно быть от 1000 до 10000")
+                    return
+
+                # Всё ок — очищаем ошибку
+                step._error.update("")
+
+                wizard.state.tx_queue_len = num
                 wizard.next_step()
 
         return StepContainer(
@@ -81,6 +95,7 @@ class StepTXQL:
             self._wan_current,
             self._lan_current,
             self._input,
+            self._error,
             classes="step-container",
         )
 

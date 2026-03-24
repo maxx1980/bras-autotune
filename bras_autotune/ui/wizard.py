@@ -94,9 +94,9 @@ class WizardView(Vertical):
             Button("Далее", id="btn_next", variant="primary"),
             classes="wizard-buttons",
         )
-
+        yield self._title
         yield self._step_container
-        yield buttons
+#        yield buttons
 
     def on_mount(self):
         self.focus()
@@ -115,20 +115,20 @@ class WizardView(Vertical):
         container = step.render(self)
         self._step_container.mount(container)
 
-        self.query_one("#btn_back").disabled = self.index == 0
-        self.query_one("#btn_next").label = (
-            "Готово" if self.index == len(self.steps) - 1 else "Далее"
-        )
+#        self.query_one("#btn_back").disabled = self.index == 0
+#        self.query_one("#btn_next").label = (
+#            "Готово" if self.index == len(self.steps) - 1 else "Далее"
+#        )
 
     # ---------------------------------------------------------
     # Button handlers
     # ---------------------------------------------------------
 
-    def on_button_pressed(self, event: Button.Pressed):
-        if event.button.id == "btn_back":
-            self.prev_step()
-        elif event.button.id == "btn_next":
-            self.next_step()
+ #   def on_button_pressed(self, event: Button.Pressed):
+ #       if event.button.id == "btn_back":
+ #           self.prev_step()
+ #       elif event.button.id == "btn_next":
+ #           self.next_step()
 
     def prev_step(self):
         if self.index > 0:

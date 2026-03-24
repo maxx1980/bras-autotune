@@ -1,0 +1,13 @@
+# bras_autotune/core/__init__.py
+
+"""
+Core step modules for the autotune wizard.
+Each step is implemented as a separate class with a minimal interface:
+
+    class StepX:
+        title = "..."
+        def render(self, wizard): ...
+        def collect(self, wizard): ...
+
+The wizard controller imports these classes and executes them in sequence.
+"""

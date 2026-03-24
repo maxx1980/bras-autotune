@@ -1,0 +1,65 @@
+/* Заголовок шага */
+.wizard-title {
+    text-align: center;
+    padding: 1 0;
+    height: 3;
+    content-align: center middle;
+    background: $surface;
+    color: $text;
+    border-bottom: solid $accent 1;
+}
+
+/* Контейнер шага */
+.wizard-step-container {
+    padding: 2;
+    height: auto;
+    width: 100%;
+    content-align: left top;
+}
+
+/* Кнопки навигации */
+.wizard-buttons {
+    padding: 1;
+    height: 3;
+    width: 100%;
+    content-align: center middle;
+    border-top: solid $accent 1;
+    background: $surface;
+}
+
+/* Текстовые заголовки внутри шагов */
+.step-title {
+    padding: 1 0;
+    color: $accent;
+    text-style: bold;
+}
+
+/* Таблица IRQ */
+#irq_table {
+    height: 20;
+    border: solid $accent 1;
+}
+
+/* Поле ввода */
+Input {
+    width: 100%;
+    border: solid $accent 1;
+    padding: 0 1;
+}
+
+/* Контейнер управления IRQ */
+.irq-controls {
+    padding: 1 0;
+    height: 3;
+    content-align: left middle;
+}
+
+/* Сводка */
+.summary-text {
+    padding: 1;
+    border: solid $accent 1;
+    background: $boost;
+    height: auto;
+    width: 100%;
+    overflow: auto;
+}

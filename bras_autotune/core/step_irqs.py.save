@@ -1,0 +1,96 @@
+        self._input = None
+        self._auto_btn = None
+
+    def render(self, wizard):
+        """
+        Отрисовывает интерактивную таблицу IRQ.
+        """
+        # Таблица IRQ
+        self._table = DataTable(id="irq_table")
+        self._table.add_columns("IRQ", "Описание", "CPU mask")
+
+        for irq in wizard.state.irqs or []:
+            self._table.add_row(str(irq["irq"]), irq["desc"], irq.get("mask", ""))
+
+        # Поле ввода маски
+        self._input = Input(
+            placeholder="Например: 0x04",
+            id="irq_mask_input",
+        )
+
+        # Кнопка авто‑назначения
+        self._auto_btn = Button(
+            "Авто IRQ",
+            id="auto_irq_btn",
+            variant="primary",
+        )
+
+        container = Vertical(
+            Static("Настройка IRQ affinity:", classes="step-title"),
+            self._table,
+            Horizontal(
+                self._input,
+                self._auto_btn,
+                classes="irq-controls",
+            ),
+            classes="step-container",
+        )
+
+        # Подписываемся на события
+        wizard.screen.set_interval(0, lambda: None)  # активируем обработку событий
+        wizard.screen.on(Button.Pressed, self._on_button)
+        wizard.screen.on(DataTable.RowSelected, self._on_row_selected)
+
+        return container
+
+    # -----------------------------
+    #   Обработчики событий
+    # -----------------------------
+
+    def _on_button(self, event: Button.Pressed):
+        if event.button.id == "auto_irq_btn":
+            self._auto_assign(event.button.app.wizard)
+
+    def _on_row_selected(self, event: DataTable.RowSelected):
+        """
+        При выборе строки — подставляем текущую маску в поле ввода.
+        """
+        row = self._table.get_row(event.row_key)
+        current_mask = row[2]
+        self._input.value = current_mask
+
+    # -----------------------------
+    #   Логика
+    # -----------------------------
+
+    def _auto_assign(self, wizard):
+        """
+        Простая авто‑логика: равномерно распределяем IRQ по data‑CPUs.
+        """
+        data_cpus = wizard.state.data_cpus or ""
+        if not data_cpus:
+            return
+
+        # Преобразуем диапазон CPU в список
+        cpu_list = self._expand_cpu_range(data_cpus)
+        if not cpu_list:
+            return
+
+        # Назначаем IRQ по кругу
+        irqs = wizard.state.irqs or []
+        for i, irq in enumerate(irqs):
+            cpu = cpu_list[i % len(cpu_list)]
+            irq["mask"] = hex(1 << cpu)
+
+        # Обновляем таблицу
+        self._table.clear()
+        for irq in irqs:
+            self._table.add_row(str(irq["irq"]), irq["desc"], irq["mask"])
+
+    @staticmethod
+    def _expand_cpu_range(text):
+        """
+        Преобразует строку вида "2-5" → [2,3,4,5]
+        """
+        if "-" in text:
+            a, b

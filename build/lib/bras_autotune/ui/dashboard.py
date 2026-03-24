@@ -1,24 +1,19 @@
 from textual.app import App
 from textual.screen import Screen
 from textual.containers import Vertical
-import psutil
+
 from bras_autotune.ui.menu import MenuBar
 from bras_autotune.ui.screens import InterfacesView, InterfaceDetailsView
 from bras_autotune.mon.live import LiveCPUView
 from bras_autotune.mon.irq import IrqMonitor
 from bras_autotune.ui.help_tuning import HelpTuningView
-from bras_autotune.ui.wizard import WizardView   # ← ВАЖНО: теперь WizardView (Widget)
-from bras_autotune.utils import list_physical_interfaces
-
+from bras_autotune.ui.wizard import WizardScreen
 
 
 class DashboardScreen(Screen):
 
     def compose(self):
-        # Верхнее меню — всегда видно
         yield MenuBar(id="menu")
-
-        # Контентная область — сюда монтируются все вьюхи
         self.content = Vertical(id="content")
         yield self.content
 
@@ -56,53 +51,57 @@ class DashboardScreen(Screen):
         self.monitor = None
 
     def show_wizard(self):
-        self.content.remove_children()
-        wizard = WizardView()
-        wizard.state.interfaces = list_physical_interfaces()
-        wizard.state.cpu_count = psutil.cpu_count(logical=False)   # ← ВАЖНО
-        self.content.mount(wizard)
-        self.monitor = None
-
-
+        # ВАЖНО: WizardScreen — это Screen, его нельзя mount()
+        self.app.push_screen(WizardScreen())
 
 
 class DashboardApp(App):
     CSS_PATH = "dashboard.css"
-    THEMES = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         from bras_autotune.mon.irq import detect_active_iface
         self.current_iface = detect_active_iface()
+
+        # Эти данные нужны для интерфейсов
         self.interfaces_stats = {}
 
     def set_interface(self, iface):
         self.current_iface = iface
 
     def on_mount(self):
-        # ← ВАЖНО: только один экран — DashboardScreen
         self.push_screen(DashboardScreen())
 
     async def on_key(self, event):
 
+        # ---------------------------------------------------------
+        # Если открыт Wizard — игнорируем глобальные хоткеи
+        # ---------------------------------------------------------
+        if isinstance(self.screen, WizardScreen):
+            return
 
         screen = self.screen
         menu = screen.query_one("#menu")
 
+        # -----------------------------------------
         # ПРОБЕЛ — переключение интерфейсов в IRQ
+        # -----------------------------------------
         if event.key == "space":
             if screen.monitor and isinstance(screen.monitor, IrqMonitor):
                 screen.monitor.switch_iface()
                 screen.monitor.focus()
             return
 
+        # -----------------------------------------
         # СТРЕЛКА ВВЕРХ — фокус на меню
-        if event.key == "escape":
+        # -----------------------------------------
+        if event.key == "up":
             menu.focus()
-            self.selected = 1
             return
 
+        # -----------------------------------------
         # СТРЕЛКИ ВЛЕВО/ВПРАВО — переключение пунктов меню
+        # -----------------------------------------
         if event.key in ("left", "right"):
             if menu.has_focus:
 

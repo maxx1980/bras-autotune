@@ -1,0 +1,84 @@
+/* Фон всего приложения */
+App {
+    background: #00ff2f;
+    color: white;
+}
+
+/* Верхнее меню */
+#menubar {
+    background: #aa4a00;
+    color: white;
+    padding: 1 2;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    background: #c20d43;
+    border: solid #00ff2f;
+    padding: 0 1;
+    width: 24;
+}
+
+/* Пункты */
+.dropdown-item {
+    background: #ef1111;
+    color: white;
+}
+
+.dropdown-item.selected {
+    background: #e91636;
+    color: rgb(20, 223, 20);
+}
+#content {
+    padding: 1 2;
+}
+
+.section-title {
+    color: rgb(237, 237, 16);
+    text-style: bold;
+}
+
+.recommendation {
+    color: rgb(21, 248, 21);
+}
+InterfaceDetailsView {
+    overflow-y: auto;
+}
+
+#left-pane {
+    width: 40%;
+    padding: 1 2;
+}
+
+#right-pane {
+    width: 60%;
+    padding: 1 2;
+}
+#details-columns {
+    height: auto;
+}
+/* Контейнер мастера */
+#wizard-container {
+    layout: vertical;
+    padding: 2;
+    height: 100%;
+    width: 100%;
+}
+
+/* Заголовок */
+#wizard-title {
+    width: 100%;
+    min-height: 3;
+    padding: 1 0;
+    color: yellow;
+    text-style: bold;
+}
+
+/* Основной текст */
+#wizard-body {
+    width: 100%;
+    min-height: 5;
+    padding: 1 0;
+    color: white;
+}
+

@@ -4,7 +4,7 @@ from textual.containers import Horizontal, Vertical
 
 
 class BrasAutotuneUI(App):
-    CSS_PATH = "ui.css"
+    CSS_PATH = "app.css"
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)

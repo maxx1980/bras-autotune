@@ -16,7 +16,6 @@ from bras_autotune.tuning.rps_xps import (
 
 
 class InterfacesView(Vertical):
-    can_focus = True
 
     selected = reactive(0)
 
@@ -63,7 +62,6 @@ class InterfacesView(Vertical):
 
 
 class InterfaceDetailsView(Vertical):
-    can_focus = True
 #    DEFAULT_CSS = """
 #    InterfaceDetailsView {
 #        overflow-y: auto;
@@ -84,9 +82,6 @@ class InterfaceDetailsView(Vertical):
         super().__init__()
         self.iface = iface
         self.stats = stats
-    async def on_mount(self):
-        self.focus()
-        self.set_interval(1)
 
     def compose(self):
         yield Static(f"[bold]Интерфейс: {self.iface}[/bold]\n"

@@ -56,7 +56,6 @@ class DropdownMenu(Static):
         if key == "down":
             self.selected = min(self.selected + 1, len(self.items) - 1)
             self.highlight()
-            self.parent_menu.label.update(self.parent_menu.render_menu())   # ← перерисовка меню
             event.stop()
             return
 
@@ -66,7 +65,6 @@ class DropdownMenu(Static):
             else:
                 self.selected -= 1
                 self.highlight()
-                self.parent_menu.label.update(self.parent_menu.render_menu())   # ← перерисовка меню
             event.stop()
             return
 
@@ -92,10 +90,6 @@ class MenuBar(Static):
     selected = reactive(0)
     dropdown = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._last_selected = 0
-
     def compose(self):
         self.label = Static(self.render_menu(), id="menubar")
         yield self.label
@@ -109,32 +103,11 @@ class MenuBar(Static):
                 parts.append(item)
         return " | ".join(parts)
 
-    # ---------------------------
-    # ФОКУС
-    # ---------------------------
-
-    def on_focus(self):
-        # если меню было "выключено" — вернуть подсветку
-        if self.selected == -1:
-            self.selected = self._last_selected
-            self.label.update(self.render_menu())
-
-    def on_blur(self):
-        # если меню активно — выключить подсветку
-        if self.selected != -1:
-            self._last_selected = self.selected
-            self.selected = -1
-            self.label.update(self.render_menu())
-
-
     # --------------------------------------------------------
     # DROPDOWN CONTROL
     # --------------------------------------------------------
 
     def open_dropdown(self):
-        # Перерисовать меню перед открытием
-        self.label.update(self.render_menu())
-
         if self.dropdown:
             self.dropdown.remove()
 
@@ -150,18 +123,11 @@ class MenuBar(Static):
 
         self.mount(self.dropdown)
         self.dropdown.focus()
-#        self.selected = 6
-
-        self.label.update(self.render_menu())
 
     def close_dropdown(self):
         if self.dropdown:
             self.dropdown.remove()
             self.dropdown = None
-
-        # Перерисовать меню после закрытия
-        self.label.update(self.render_menu())
-
         self.focus()
 
     # --------------------------------------------------------
@@ -185,32 +151,25 @@ class MenuBar(Static):
 
         if item == "Irq monitoring":
             self.app.screen.show_irq_monitoring()
-            self.selected = -1
-            self.label.update(self.render_menu())
             self.close_dropdown()
             return
-
         if item == "Tuning":
             self.app.screen.show_help_tuning()
-            self.selected = -1
-            self.label.update(self.render_menu())
             self.close_dropdown()
             return
-
         if item == "Wizard":
             self.app.screen.show_wizard()
-            self.selected = -1
-            self.label.update(self.render_menu())
             self.close_dropdown()
             return
 
+        
         if item == "Quit":
             self.app.exit()
 
         self.close_dropdown()
 
     # --------------------------------------------------------
-    # KEY HANDLING
+    # KEY HANDLING (FIXED)
     # --------------------------------------------------------
 
     def on_key(self, event):
@@ -240,4 +199,3 @@ class MenuBar(Static):
             self.open_dropdown()
             event.stop()
             return
-#        event.bubble()

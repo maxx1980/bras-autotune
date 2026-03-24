@@ -1,20 +1,20 @@
 /* Фон всего приложения */
 App {
-    background: #000080;
-    color: white;
+    background: blue;
+    color: yellow;
 }
 
 /* Верхнее меню */
 #menubar {
-    background: #0000aa;
+    background: blue;
     color: white;
     padding: 1 2;
 }
 
 /* Выпадающее меню */
 .dropdown-menu {
-    background: #0000aa;
-    border: solid #00ff2f;
+    background: blue;
+    border: solid yellowgreen;
     padding: 0 1;
     width: 24;
 }
@@ -26,11 +26,12 @@ App {
 }
 
 .dropdown-item.selected {
-    background: #0055ff;
+    background: blue;
     color: yellow;
 }
 #content {
     padding: 1 2;
+    
 }
 
 .section-title {
@@ -56,4 +57,78 @@ InterfaceDetailsView {
 }
 #details-columns {
     height: auto;
+}
+/* Контейнер мастера */
+#wizard-container {
+    layout: vertical;
+    padding: 2;
+    height: auto;
+    width: 100%;
+    background: #1e1e4a;
+    color: #f0f0f0;
+    border: solid #444;       /* ← исправлено */
+}
+
+/* Заголовок шага */
+#wizard-title {
+    width: 100%;
+    padding: 1 1;
+    background: #2a2a6a;
+    color: #fff;
+    text-style: bold;
+    border-bottom: solid #555;   /* ← исправлено */
+}
+
+/* Основной текст */
+#wizard-body {
+    width: 100%;
+    padding: 1 1;
+    background: #303080;
+    color: #e8e8ff;
+    max-height: 10;
+    overflow-y: auto; /* включаем скролл внутри body */
+
+}
+
+/* Поле ввода */
+#wizard-input {
+    margin-top: 1;
+    background: #11112a;
+    color: #fff;
+    border: solid #f00606;      /* ← исправлено */
+}
+
+/* Кнопка Далее */
+#wizard-next {
+    margin-top: 1;
+    background: #0044aa;
+    color: #fff;
+    text-style: bold;
+    border: solid #333;      /* ← исправлено */
+}
+#edit_table {
+    width: 100%;
+    height: auto;
+    
+}
+
+.edit-row {
+    width: 100%;
+    height: 3;
+
+}
+
+.col-q { width: 12; }
+.col-wan { width: 20; }
+.col-lan { width: 20; }
+
+.edit-row Input {
+    width: 12;
+    border: solid yellowgreen;
+    
+}
+
+.edit-row {
+    grid-size: 5;
+    grid-columns: 4 20 6 6 20;
 }

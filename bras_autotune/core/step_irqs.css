@@ -1,0 +1,15 @@
+#edit_table {
+    width: 100%;
+    height: auto;
+}
+
+.edit-row {
+    width: 100%;
+    height: auto;
+    padding: 1 0;
+}
+
+.col {
+    width: 20%;
+    padding: 0 1;
+}

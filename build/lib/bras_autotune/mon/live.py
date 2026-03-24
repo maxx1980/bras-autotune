@@ -109,7 +109,6 @@ class LiveCPUView(Vertical):
     irq_prev = reactive([])
     soft_prev = reactive([])
     rps_prev = reactive([])
-    can_focus = True
 
     def __init__(self):
         super().__init__()
@@ -158,7 +157,6 @@ class LiveCPUView(Vertical):
 
 
     async def on_mount(self):
-        self.focus()
         self.irq_prev = read_irq_per_cpu()
         self.soft_prev = read_softirq_per_cpu()
         self.rps_prev = read_rps_activity()

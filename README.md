@@ -11,13 +11,6 @@ git clone https://github.com/maxx1980/bras-autotune
 
 cd bras-autotune
 
-sudo apt install ./debian_pkg.deb
-```
-`externally‑managed‑environment` означает, що твоя система (Ubuntu/Debian) блокирует установку пакетов через `pip3 install` в системный Python.
-
-лучще и правильнее 
-
-```
 python3 -m venv .venv
 
 source .venv/bin/activate
